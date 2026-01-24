@@ -593,12 +593,42 @@ Before every commit, verify:
 - [ ] No console.log() or debugging code left in
 - [ ] No commented-out code (remove or document why)
 
+## Parallel Work (CRITICAL for Multiple Agents)
+
+**When multiple agents are working simultaneously:**
+
+1. **Read `PARALLEL_WORK_GUIDELINES.md` BEFORE starting work**
+2. **Check `.file-locks` for locked files**
+3. **Announce your work** - Communicate what you're working on
+4. **Work in isolation** - Use separate branches and files
+5. **Coordinate on shared files** - Only one agent per file
+6. **Lock high-conflict files** when modifying:
+   - Add entry to `.file-locks`
+   - Format: `filepath|agent-id|timestamp|reason`
+   - Remove lock when done
+7. **Pull frequently** - Every 15-30 minutes
+8. **Serialize merges** - One agent merges at a time
+
+**High-conflict files requiring locks:**
+- `src/index.ts` (MCP entry point)
+- `package.json` (dependencies)
+- `README.md` (main docs)
+- `src/utils/types.ts` (shared types)
+
+**Branch naming for parallel work:**
+```
+agent-{id}/{type}/{description}
+Example: agent-a/feature/add-diff-tool
+```
+
 ## Questions or Clarifications?
 
 If you're unsure about:
 - How to structure something
 - Whether to commit now or later
 - How to write a commit message
+- **Whether another agent is working on the same file**
+- **How to coordinate with other agents**
 
 **Ask the user first.** Don't guess.
 
