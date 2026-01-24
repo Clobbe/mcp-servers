@@ -47,17 +47,19 @@ export async function ralphLoop(args: {
           break;
         }
 
+        const startTime = new Date();
         const result: TaskExecutionResult = {
           taskId: task.id,
           status: 'pending',
-          startTime: new Date(),
+          startTime,
         };
 
         // In actual implementation, this would execute the task
         // For now, we just track the structure
+        const endTime = new Date();
         result.status = 'completed';
-        result.endTime = new Date();
-        result.duration = result.endTime.getTime() - result.startTime.getTime();
+        result.endTime = endTime;
+        result.duration = endTime.getTime() - startTime.getTime();
 
         results.push(result);
         iteration++;

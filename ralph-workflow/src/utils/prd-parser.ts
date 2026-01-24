@@ -62,7 +62,7 @@ function extractFeatures(lines: string[]): Feature[] {
       currentFeature = {
         name,
         description: line.replace(/^[-*]\s+\*\*.+?\*\*:?\s*/, '').trim(),
-        priority: determinePriority(line),
+        priority: determineFeaturePriority(line),
       };
     } else if (currentFeature && line.trim()) {
       currentFeature.description += ' ' + line.trim();
@@ -89,7 +89,7 @@ function extractRequirements(lines: string[]): Requirement[] {
       requirements.push({
         category: determineCategory(line),
         description: line.replace(/^[-*]\s+/, '').trim(),
-        priority: determinePriority(line),
+        priority: determineRequirementPriority(line),
       });
     }
   }
@@ -114,7 +114,18 @@ function extractTechnicalDetails(lines: string[]): string | undefined {
   return techLines.join('\n').trim();
 }
 
-function determinePriority(text: string): 'high' | 'medium' | 'low' | 'must' | 'should' | 'could' {
+function determineFeaturePriority(text: string): 'high' | 'medium' | 'low' {
+  const lower = text.toLowerCase();
+  if (lower.includes('critical') || lower.includes('must') || lower.includes('high')) {
+    return 'high';
+  }
+  if (lower.includes('should') || lower.includes('medium')) {
+    return 'medium';
+  }
+  return 'low';
+}
+
+function determineRequirementPriority(text: string): 'must' | 'should' | 'could' {
   const lower = text.toLowerCase();
   if (lower.includes('critical') || lower.includes('must') || lower.includes('high')) {
     return 'must';
