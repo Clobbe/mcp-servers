@@ -10,6 +10,15 @@ This is the MCP Servers collection - a set of Model Context Protocol servers for
 
 ## Critical Instructions
 
+### Testing - MANDATORY
+
+**ALL features MUST have comprehensive tests using Playwright.**
+
+- Write tests BEFORE or DURING implementation
+- Minimum 80% code coverage required
+- No PRs without tests
+- Run `npm test` before every commit
+
 ### Git Workflow - EXTREMELY IMPORTANT
 
 **NEVER make large commits. ALWAYS commit incrementally.**
@@ -39,15 +48,17 @@ Types: feat, fix, docs, refactor, test, chore, perf
 ```
 Create file → Commit
 Add utility → Commit
+Write tests → Commit
 Add tool → Commit
 Wire tool → Commit
 Document → Commit
-Test → Fix → Commit
+Run tests → Fix → Commit
 ```
 
 NOT:
 ```
 Create everything → One big commit ❌
+Write code without tests ❌
 ```
 
 ## Project-Specific Rules
@@ -74,7 +85,13 @@ server-name/
 
 ### Testing
 
-Manual testing required before commits:
+**Automated testing (REQUIRED):**
+```bash
+npm test                    # Run all tests
+npm test -- --coverage      # Check coverage (min 80%)
+```
+
+**Manual testing (after automated tests pass):**
 ```bash
 npm run build
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
@@ -92,10 +109,13 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
 Follow this sequence (commit after each step):
 
 1. Add types (if needed) → commit
-2. Add utilities (if needed) → commit  
-3. Implement tool → commit
-4. Register in index.ts → commit
-5. Document in README → commit
+2. Add utilities (if needed) → commit
+3. Write tests for utilities → commit
+4. Implement tool → commit
+5. Write comprehensive tests for tool → commit
+6. Register in index.ts → commit
+7. Document in README → commit
+8. Run tests, fix issues → commit
 
 ## When Creating New Server
 
