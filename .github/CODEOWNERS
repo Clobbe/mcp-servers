@@ -1,0 +1,22 @@
+# Code Owners for MCP Servers
+
+# Default owners for everything
+* @Clobbe
+
+# Specific ownership rules
+
+# Core infrastructure (requires approval from primary maintainer)
+.cursorrules @Clobbe
+.clauderc @Clobbe
+package.json @Clobbe
+tsconfig.json @Clobbe
+
+# Documentation (can be reviewed by anyone)
+*.md
+
+# Each MCP server has its own ownership
+/changelog-manager/ @Clobbe
+
+# High-conflict files require extra review
+**/src/index.ts @Clobbe
+**/src/utils/types.ts @Clobbe
