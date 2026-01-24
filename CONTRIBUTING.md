@@ -34,15 +34,27 @@
 
 2. **Make your changes** in the `src/` directory
 
-3. **Build and test:**
+3. **Write tests (MANDATORY):**
+   ```bash
+   # Write tests in __tests__/ directory
+   # Use Playwright testing framework
+   ```
+
+4. **Run tests:**
+   ```bash
+   npm test                    # Run all tests
+   npm test -- --coverage      # Check coverage (min 80%)
+   ```
+
+5. **Build:**
    ```bash
    npm run build
    
-   # Test manually
+   # Test tool listing
    echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
    ```
 
-4. **Commit incrementally with conventional commit format:**
+6. **Commit incrementally with conventional commit format:**
    ```bash
    # Commit small, focused changes
    git add src/utils/new-helper.ts
@@ -103,7 +115,13 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
    git commit -m "feat: add my_new_tool for doing X"
    ```
 
-3. Register in `src/index.ts`:
+3. **Write tests (MANDATORY):**
+   ```bash
+   git add __tests__/tools/my-new-tool.test.ts
+   git commit -m "test: add comprehensive tests for my_new_tool"
+   ```
+
+4. Register in `src/index.ts`:
    ```typescript
    import { myNewToolSchema, myNewTool } from './tools/my-new-tool.js';
 
@@ -122,15 +140,26 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
    }
    ```
 
-4. **Commit the integration:**
+5. **Commit the integration:**
    ```bash
    git add src/index.ts
    git commit -m "feat: wire up my_new_tool in MCP server"
    ```
 
-5. Build and test
+6. **Run tests:**
+   ```bash
+   npm test
+   # Fix any issues
+   git add src/tools/my-new-tool.ts
+   git commit -m "fix: handle edge case in my_new_tool"
+   ```
 
-6. **Commit documentation:**
+7. **Build:**
+   ```bash
+   npm run build
+   ```
+
+8. **Commit documentation:**
    ```bash
    git add README.md
    git commit -m "docs: add my_new_tool usage examples"
@@ -182,7 +211,56 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Testing
 
-Currently testing is manual:
+### Automated Testing (MANDATORY)
+
+All features MUST have comprehensive tests using Playwright.
+
+**Writing Tests:**
+
+```typescript
+// __tests__/tools/my-tool.test.ts
+import { test, expect, describe } from '@playwright/test';
+import { myTool } from '../../src/tools/my-tool.js';
+
+describe('my_tool', () => {
+  describe('happy path', () => {
+    test('should process valid input', async () => {
+      const result = await myTool({ param: 'valid' });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('error handling', () => {
+    test('should reject invalid input', async () => {
+      const result = await myTool({ param: '' });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('edge cases', () => {
+    test('should handle extreme values', async () => {
+      // Test edge cases
+    });
+  });
+});
+```
+
+**Running Tests:**
+
+```bash
+npm test                    # Run all tests
+npm test -- --coverage      # Check coverage (min 80%)
+npm test -- --watch         # Watch mode
+```
+
+**Coverage Requirements:**
+- Minimum 80% code coverage
+- All error cases must be tested
+- All edge cases must be tested
+
+### Manual Testing
+
+After automated tests pass:
 
 ```bash
 # Test tool listing
@@ -193,8 +271,6 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
 # 2. Restart Claude Code
 # 3. Use tools via natural language
 ```
-
-Future: Add automated tests with Jest/Vitest
 
 ## Documentation
 
@@ -231,10 +307,13 @@ git commit -m "feat: implement entire changelog-manager server"
 
 ### Before Committing
 
-1. Build succeeds: `npm run build`
-2. No TypeScript errors
-3. Test manually
-4. Update documentation if needed
+1. All tests pass: `npm test`
+2. Coverage >= 80%: `npm test -- --coverage`
+3. Build succeeds: `npm run build`
+4. No TypeScript errors: `npx tsc --noEmit`
+5. Test manually in MCP client
+6. Documentation updated if needed
+7. No console.log() or debugging code
 
 ### Commit Messages
 
