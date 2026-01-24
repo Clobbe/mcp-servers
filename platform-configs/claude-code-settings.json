@@ -1,5 +1,9 @@
 {
   "mcpServers": {
+    "prd-generator": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/prd-generator/build/index.js"]
+    },
     "ralph-workflow": {
       "command": "node",
       "args": ["/Users/clobbster/dev/tooling/mcp-servers/ralph-workflow/build/index.js"],
@@ -10,6 +14,10 @@
     "changelog-manager": {
       "command": "node",
       "args": ["/Users/clobbster/dev/tooling/mcp-servers/changelog-manager/build/index.js"]
+    },
+    "code-tools": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/code-tools/build/index.js"]
     }
   }
 }
