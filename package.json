@@ -1,0 +1,46 @@
+{
+  "name": "mcp-servers",
+  "version": "1.0.0",
+  "description": "Collection of Model Context Protocol servers for development workflows",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "prepare": "husky install",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,json,md}\"",
+    "type-check": "tsc --noEmit",
+    "docs": "typedoc",
+    "docs:watch": "typedoc --watch",
+    "test": "echo 'Run tests in individual servers' && exit 0",
+    "build:all": "for dir in */; do (cd \"$dir\" && [ -f package.json ] && npm run build || true); done",
+    "validate": "npm run lint && npm run format:check && npm run type-check"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "ai",
+    "claude",
+    "opencode",
+    "changelog"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.0.0",
+    "prettier": "^3.0.0",
+    "typedoc": "^0.25.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=9.0.0"
+  }
+}
