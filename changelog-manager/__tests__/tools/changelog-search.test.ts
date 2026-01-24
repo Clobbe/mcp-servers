@@ -2,7 +2,7 @@
  * Tests for changelog_search tool
  */
 
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { changelogSearch } from '../../src/tools/changelog-search.js';
 import {
   createTempDir,
@@ -11,8 +11,8 @@ import {
   SAMPLE_CHANGELOG,
 } from '../helpers.js';
 
-describe('changelog_search', () => {
-  describe('happy path', () => {
+test.describe('changelog_search', () => {
+  test.describe('happy path', () => {
     test('should search and find matching entries', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -104,7 +104,7 @@ describe('changelog_search', () => {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle empty query', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -146,7 +146,7 @@ describe('changelog_search', () => {
     });
   });
 
-  describe('edge cases', () => {
+  test.describe('edge cases', () => {
     test('should handle partial word matches', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);

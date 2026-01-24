@@ -2,7 +2,7 @@
  * Tests for changelog_generate_release tool
  */
 
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { changelogGenerateRelease } from '../../src/tools/changelog-generate-release.js';
 import {
   createTempDir,
@@ -13,8 +13,8 @@ import {
   EMPTY_CHANGELOG,
 } from '../helpers.js';
 
-describe('changelog_generate_release', () => {
-  describe('happy path', () => {
+test.describe('changelog_generate_release', () => {
+  test.describe('happy path', () => {
     test('should generate release from Unreleased section', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -82,7 +82,7 @@ describe('changelog_generate_release', () => {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should reject invalid version format', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -141,7 +141,7 @@ describe('changelog_generate_release', () => {
     });
   });
 
-  describe('edge cases', () => {
+  test.describe('edge cases', () => {
     test('should handle version with patch number', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);

@@ -2,7 +2,7 @@
  * Tests for changelog_export tool
  */
 
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { changelogExport } from '../../src/tools/changelog-export.js';
 import {
   createTempDir,
@@ -13,8 +13,8 @@ import {
 } from '../helpers.js';
 import * as path from 'path';
 
-describe('changelog_export', () => {
-  describe('JSON export', () => {
+test.describe('changelog_export', () => {
+  test.describe('JSON export', () => {
     test('should export to JSON format', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -65,7 +65,7 @@ describe('changelog_export', () => {
     });
   });
 
-  describe('HTML export', () => {
+  test.describe('HTML export', () => {
     test('should export to HTML format', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -133,7 +133,7 @@ describe('changelog_export', () => {
     });
   });
 
-  describe('text export', () => {
+  test.describe('text export', () => {
     test('should export to plain text format', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -146,7 +146,7 @@ describe('changelog_export', () => {
       });
 
       expect(result.summary).toContain('✅');
-      expect(result.summary).toContain('text');
+      expect(result.summary).toContain('TEXT'); // Summary uses uppercase
       expect(result.format).toBe('text');
 
       // Verify output file exists
@@ -184,7 +184,7 @@ describe('changelog_export', () => {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle missing source file', async () => {
       const tempDir = await createTempDir();
       const outputPath = path.join(tempDir, 'output.json');
@@ -216,7 +216,7 @@ describe('changelog_export', () => {
     });
   });
 
-  describe('edge cases', () => {
+  test.describe('edge cases', () => {
     test('should report file size in summary', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);

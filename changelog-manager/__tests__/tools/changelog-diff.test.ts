@@ -2,7 +2,7 @@
  * Tests for changelog_diff tool
  */
 
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { changelogDiff } from '../../src/tools/changelog-diff.js';
 import {
   createTempDir,
@@ -11,8 +11,8 @@ import {
   SAMPLE_CHANGELOG,
 } from '../helpers.js';
 
-describe('changelog_diff', () => {
-  describe('happy path', () => {
+test.describe('changelog_diff', () => {
+  test.describe('happy path', () => {
     test('should compare two versions successfully', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -68,7 +68,7 @@ describe('changelog_diff', () => {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle missing first version', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
@@ -112,7 +112,7 @@ describe('changelog_diff', () => {
     });
   });
 
-  describe('edge cases', () => {
+  test.describe('edge cases', () => {
     test('should handle comparing version with itself', async () => {
       const tempDir = await createTempDir();
       const filePath = await createTestChangelog(tempDir, SAMPLE_CHANGELOG);
