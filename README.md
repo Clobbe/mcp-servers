@@ -4,11 +4,11 @@ Universal Model Context Protocol servers for AI coding platforms (Claude Code, O
 
 ## 🎯 Overview
 
-Production-grade MCP servers providing **16 specialized tools** across 3 operational servers for workflow automation, changelog management, and code analysis.
+Production-grade MCP servers providing **19 specialized tools** across 4 operational servers for PRD generation, workflow automation, changelog management, and code analysis.
 
 ### Key Features
 
-- **16 Tools** across 3 specialized servers (ralph-workflow, changelog-manager, code-tools)
+- **19 Tools** across 4 specialized servers (prd-generator, ralph-workflow, changelog-manager, code-tools)
 - **TypeScript/Node.js** - Production reliability with strict type safety
 - **Cross-platform** - Works with Claude Code, OpenCode, Gemini CLI
 - **Ollama Integration** - Performance-based local LLM model selection
@@ -17,7 +17,28 @@ Production-grade MCP servers providing **16 specialized tools** across 3 operati
 
 ## 📦 Available Servers
 
-### 1. Ralph Workflow Server (2 tools)
+### 1. PRD Generator Server (3 tools)
+
+Generate Product Requirements Documents with templates and validation.
+
+**Tools:**
+
+- `prd_create` - Create PRD from structured input
+  - Features, requirements, and technical details
+  - Markdown or JSON output
+  - Full validation
+- `prd_from_template` - Create PRD from pre-built templates
+  - 5 templates: web-app, api-service, mobile-app, library, full-stack
+  - Quick-start PRD generation
+- `prd_validate` - Validate PRD structure and compatibility
+  - Ralph-workflow compatibility check
+  - Quality score (0-100)
+  - Detailed validation report with ✅ ⚠️ ❌
+
+**Location:** `prd-generator/`  
+**Documentation:** [prd-generator/README.md](prd-generator/README.md)
+
+### 2. Ralph Workflow Server (2 tools)
 
 Automated workflow generation from Product Requirements Documents using the RALPH methodology.
 
@@ -35,7 +56,7 @@ Automated workflow generation from Product Requirements Documents using the RALP
 **Location:** `ralph-workflow/`  
 **Documentation:** [ralph-workflow/README.md](ralph-workflow/README.md)
 
-### 2. Changelog Manager Server (9 tools)
+### 3. Changelog Manager Server (9 tools)
 
 Complete changelog management with Keep a Changelog format and semantic versioning.
 
@@ -54,7 +75,7 @@ Complete changelog management with Keep a Changelog format and semantic versioni
 **Location:** `changelog-manager/`  
 **Documentation:** [changelog-manager/README.md](changelog-manager/README.md)
 
-### 3. Code Tools Server (5 tools)
+### 4. Code Tools Server (5 tools)
 
 Code analysis and quality assessment tools for TypeScript/JavaScript projects.
 
@@ -83,7 +104,7 @@ Code analysis and quality assessment tools for TypeScript/JavaScript projects.
 cd ~/dev/tooling/mcp-servers
 
 # Install and build all servers
-for server in ralph-workflow changelog-manager code-tools; do
+for server in prd-generator ralph-workflow changelog-manager code-tools; do
   cd $server && npm install && npm run build && cd ..
 done
 ```
@@ -99,6 +120,10 @@ Edit `~/.claude/settings.json`:
 ```json
 {
   "mcpServers": {
+    "prd-generator": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/prd-generator/build/index.js"]
+    },
     "ralph-workflow": {
       "command": "node",
       "args": ["/Users/clobbster/dev/tooling/mcp-servers/ralph-workflow/build/index.js"]
@@ -122,6 +147,10 @@ Edit `~/.opencode/settings.json`:
 ```json
 {
   "mcpServers": {
+    "prd-generator": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/prd-generator/build/index.js"]
+    },
     "ralph-workflow": {
       "command": "node",
       "args": ["/Users/clobbster/dev/tooling/mcp-servers/ralph-workflow/build/index.js"],
@@ -156,11 +185,17 @@ Restart your AI coding platform and run:
 "List all available MCP tools"
 ```
 
-You should see all 16 tools listed.
+You should see all 19 tools listed.
 
 ### First Tool Usage
 
-Try generating a workflow from a PRD:
+Try generating a PRD from a template:
+
+```
+"Use prd_from_template to create a web-app PRD for TaskMaster"
+```
+
+Generate a workflow from a PRD:
 
 ```
 "Use ralph_from_prd with this PRD content: [paste PRD]"
@@ -317,6 +352,13 @@ See [OLLAMA_SETUP.md](OLLAMA_SETUP.md) for complete setup guide.
 
 ## 🎯 Use Cases
 
+### PRD Generation
+
+- Create PRDs from structured input or templates
+- Validate PRD completeness and structure
+- Ensure ralph-workflow compatibility
+- 5 ready-to-use templates for common projects
+
 ### Workflow Automation
 
 - Generate implementation workflows from PRDs
@@ -342,6 +384,7 @@ See [OLLAMA_SETUP.md](OLLAMA_SETUP.md) for complete setup guide.
 
 ```
 mcp-servers/
+├── prd-generator/           # PRD generation (3 tools)
 ├── ralph-workflow/          # Workflow generation (2 tools)
 ├── changelog-manager/       # Changelog management (9 tools)
 ├── code-tools/              # Code analysis (5 tools)
@@ -374,12 +417,13 @@ We welcome contributions! Please see [CONTRIBUTING.md](docs/CONTRIBUTING.md) for
 
 ## 📈 Project Status
 
-**Completed:** 62.5% of planned phases (5/8)  
-**Tools Implemented:** 16/25 (64%)  
-**Servers Operational:** 3/4 (75%)
+**Completed:** 75% of planned phases (6/8)  
+**Tools Implemented:** 19/28 (68%)  
+**Servers Operational:** 4/5 (80%)
 
 ### What's Complete ✅
 
+- ✅ PRD Generator Server (3 tools)
 - ✅ Ralph Workflow Server (2 tools)
 - ✅ Changelog Manager Server (9 tools)
 - ✅ Code Tools Server (5 tools)
