@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "ralph-workflow": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/ralph-workflow/build/index.js"],
+      "timeout": 30000
+    },
+    "changelog-manager": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/changelog-manager/build/index.js"]
+    }
+  },
+  "llm": {
+    "provider": "ollama",
+    "baseUrl": "http://localhost:11434",
+    "defaultModel": "deepseek-coder:6.7b"
+  }
+}

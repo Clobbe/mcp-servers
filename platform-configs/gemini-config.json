@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "ralph-workflow": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/ralph-workflow/build/index.js"]
+    },
+    "changelog-manager": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/changelog-manager/build/index.js"]
+    }
+  }
+}
