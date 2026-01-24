@@ -1,0 +1,14 @@
+# File Locks for Parallel Work
+
+# Format: filepath|agent-id|timestamp|reason
+# Example: src/index.ts|agent-a|2026-01-24T12:00:00Z|registering new tool
+
+# Current locks (empty = no locks)
+# Add your lock here when working on a shared file
+# Remove your lock when done
+
+# High-conflict files that require locking:
+# - src/index.ts (MCP server entry point)
+# - package.json (dependencies)
+# - README.md (main documentation)
+# - src/utils/types.ts (shared types)
