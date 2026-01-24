@@ -1,0 +1,44 @@
+{
+  "name": "prd-generator",
+  "version": "1.0.0",
+  "description": "MCP server for generating Product Requirements Documents",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "prd-generator": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "test": "playwright test",
+    "test:coverage": "playwright test --coverage",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "prd",
+    "requirements",
+    "documentation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.6.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.50.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
