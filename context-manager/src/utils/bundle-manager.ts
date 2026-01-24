@@ -5,7 +5,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import type { ContextBundle, ContextFile, ContextBundleMetadata } from './types.js';
+import type { ContextBundle, ContextFile } from './types.js';
 
 const BUNDLES_DIR = path.join(os.homedir(), '.mcp-context-bundles');
 
