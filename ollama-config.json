@@ -1,0 +1,59 @@
+{
+  "modelSelection": {
+    "strategy": "performance-based",
+    "rules": [
+      {
+        "condition": "taskType === 'code' && ramAvailable > 16",
+        "model": "qwen2.5-coder:7b",
+        "reason": "Best for code generation with sufficient RAM"
+      },
+      {
+        "condition": "taskType === 'code' && ramAvailable <= 16",
+        "model": "deepseek-coder:6.7b",
+        "reason": "Efficient code model for limited RAM"
+      },
+      {
+        "condition": "taskType === 'general'",
+        "model": "llama3.2:8b",
+        "reason": "Good general-purpose model"
+      }
+    ],
+    "fallback": "deepseek-coder:6.7b",
+    "comment": "Current system has deepseek-coder:6.7b installed"
+  },
+  "resourceLimits": {
+    "maxMemoryMB": 8192,
+    "maxConcurrentRequests": 3,
+    "timeoutSeconds": 120
+  },
+  "monitoring": {
+    "enabled": true,
+    "logFile": "~/dev/tooling/mcp-servers/logs/ollama-usage.log"
+  },
+  "installedModels": [
+    {
+      "name": "deepseek-coder:6.7b",
+      "size": "3.8 GB",
+      "type": "code",
+      "recommended": true
+    }
+  ],
+  "recommendedModels": [
+    {
+      "name": "qwen2.5-coder:7b",
+      "purpose": "Best code generation model",
+      "installCommand": "ollama pull qwen2.5-coder:7b"
+    },
+    {
+      "name": "llama3.2:8b",
+      "purpose": "General-purpose tasks",
+      "installCommand": "ollama pull llama3.2:8b"
+    },
+    {
+      "name": "deepseek-coder:6.7b",
+      "purpose": "Efficient code model",
+      "installCommand": "ollama pull deepseek-coder:6.7b",
+      "installed": true
+    }
+  ]
+}
