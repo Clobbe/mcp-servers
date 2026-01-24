@@ -37,7 +37,7 @@ export async function ralphLoop(args: {
     const workflow: Workflow = JSON.parse(content);
 
     const results: TaskExecutionResult[] = [];
-    const maxIterations = args.max_iterations || 10;
+    const maxIterations = args.max_iterations !== undefined ? args.max_iterations : 10;
     let iteration = 0;
 
     // Iterate through phases

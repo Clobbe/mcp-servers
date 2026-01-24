@@ -92,6 +92,7 @@ function generateImplementationPhases(prd: ParsedPRD, tech: TechnologyStack): Wo
         description: `Implement ${feature.name}`,
         estimatedTime: '1-2 hours',
       })),
+      estimatedDuration: `${mediumPriority.length * 2} hours`,
     });
   }
 
@@ -105,6 +106,7 @@ function generateImplementationPhases(prd: ParsedPRD, tech: TechnologyStack): Wo
         description: `Implement ${feature.name}`,
         estimatedTime: '1 hour',
       })),
+      estimatedDuration: `${lowPriority.length} hours`,
     });
   }
 

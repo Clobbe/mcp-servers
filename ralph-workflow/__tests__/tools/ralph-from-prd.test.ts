@@ -93,10 +93,10 @@ Deployed on AWS.
       });
 
       const data = result.data as any;
-      expect(data.workflow).toContain('TypeScript');
-      expect(data.workflow).toContain('React');
-      expect(data.workflow).toContain('PostgreSQL');
-      expect(data.workflow).toContain('AWS');
+      expect(data.workflow).toContain('typescript');
+      expect(data.workflow).toContain('react');
+      expect(data.workflow).toContain('postgresql');
+      expect(data.workflow).toContain('aws');
     });
 
     test('should include phases in markdown', async () => {

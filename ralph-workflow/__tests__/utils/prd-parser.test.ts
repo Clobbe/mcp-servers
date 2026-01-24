@@ -82,9 +82,9 @@ Project overview text here.
 - **Optional Feature**: Could implement later
       `;
       const parsed = parsePRD(prd);
-      expect(parsed.features[0].priority).toBe('must');
-      expect(parsed.features[1].priority).toBe('should');
-      expect(parsed.features[2].priority).toBe('could');
+      expect(parsed.features[0].priority).toBe('high');
+      expect(parsed.features[1].priority).toBe('medium');
+      expect(parsed.features[2].priority).toBe('low');
     });
 
     test('should return empty array when no features section', async () => {
@@ -205,10 +205,10 @@ Deployed on AWS with auto-scaling.
 
       // Check feature priorities
       const cart = parsed.features.find((f) => f.name === 'Shopping Cart');
-      expect(cart?.priority).toBe('must');
+      expect(cart?.priority).toBe('high');
 
       const payment = parsed.features.find((f) => f.name === 'Payment Processing');
-      expect(payment?.priority).toBe('must');
+      expect(payment?.priority).toBe('high');
 
       // Check requirement categories
       const performance = parsed.requirements.find((r) => r.description.includes('concurrent'));

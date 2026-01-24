@@ -141,7 +141,10 @@ function determineCategory(text: string): 'functional' | 'non-functional' | 'tec
   if (
     lower.includes('performance') ||
     lower.includes('security') ||
-    lower.includes('scalability')
+    lower.includes('scalability') ||
+    lower.includes('concurrent') ||
+    lower.includes('availability') ||
+    lower.includes('reliability')
   ) {
     return 'non-functional';
   }
