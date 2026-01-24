@@ -5,7 +5,7 @@
  * Converts the Unreleased section to a versioned release with date.
  */
 
-import { readFile, writeFile } from '../utils/file-ops.js';
+import { readChangelog, writeChangelog } from '../utils/file-ops.js';
 import {
   parseChangelog,
   serializeChangelog,
@@ -92,7 +92,7 @@ export async function changelogGenerateRelease(
     }
 
     // Read and parse changelog
-    const content = await readFile(filePath);
+    const content = await readChangelog(filePath);
     const changelog = parseChangelog(content);
 
     // Find Unreleased section
@@ -159,7 +159,7 @@ export async function changelogGenerateRelease(
 
     // Serialize and write back
     const newContent = serializeChangelog(updatedChangelog);
-    await writeFile(filePath, newContent);
+    await writeChangelog(filePath, newContent);
 
     // Build summary
     const sectionSummary = unreleased.sections

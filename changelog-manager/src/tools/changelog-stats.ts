@@ -4,7 +4,7 @@
  * Generates statistics about the changelog.
  */
 
-import { readFile } from '../utils/file-ops.js';
+import { readChangelog } from '../utils/file-ops.js';
 import { parseChangelog } from '../utils/changelog-parser.js';
 import type { ChangelogStructure, SectionType } from '../utils/types.js';
 
@@ -45,7 +45,7 @@ export async function changelogStats(args: StatsArgs): Promise<StatsResult> {
     const filePath = args.file_path || './CHANGELOG.md';
 
     // Read and parse changelog
-    const content = await readFile(filePath);
+    const content = await readChangelog(filePath);
     const changelog = parseChangelog(content);
 
     // Calculate statistics

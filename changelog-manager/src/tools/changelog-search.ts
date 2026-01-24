@@ -4,7 +4,7 @@
  * Searches changelog entries by query, category, and version.
  */
 
-import { readFile } from '../utils/file-ops.js';
+import { readChangelog } from '../utils/file-ops.js';
 import { parseChangelog } from '../utils/changelog-parser.js';
 import type { ChangelogEntry, SectionType } from '../utils/types.js';
 
@@ -77,7 +77,7 @@ export async function changelogSearch(args: SearchArgs): Promise<SearchResult> {
     }
 
     // Read and parse changelog
-    const content = await readFile(filePath);
+    const content = await readChangelog(filePath);
     const changelog = parseChangelog(content);
 
     // Search for matches

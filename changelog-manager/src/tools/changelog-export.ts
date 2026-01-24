@@ -4,7 +4,8 @@
  * Exports changelog to different formats (JSON, HTML, text).
  */
 
-import { readFile, writeFile } from '../utils/file-ops.js';
+import { promises as fs } from 'fs';
+import { readChangelog } from '../utils/file-ops.js';
 import { parseChangelog } from '../utils/changelog-parser.js';
 import type { ChangelogStructure, ChangelogEntry } from '../utils/types.js';
 
@@ -58,7 +59,7 @@ export async function changelogExport(args: ExportArgs): Promise<ExportResult> {
     const format = args.format;
 
     // Read and parse changelog
-    const content = await readFile(filePath);
+    const content = await readChangelog(filePath);
     const changelog = parseChangelog(content);
 
     // Export to requested format
@@ -83,7 +84,7 @@ export async function changelogExport(args: ExportArgs): Promise<ExportResult> {
     }
 
     // Write to output file
-    await writeFile(outputPath, exportedContent);
+    await fs.writeFile(outputPath, exportedContent, 'utf-8');
 
     return {
       summary:

@@ -4,7 +4,7 @@
  * Compares two versions in a changelog and shows differences.
  */
 
-import { readFile } from '../utils/file-ops.js';
+import { readChangelog } from '../utils/file-ops.js';
 import { parseChangelog, findEntry } from '../utils/changelog-parser.js';
 import type { ChangelogEntry, ChangelogSection } from '../utils/types.js';
 
@@ -58,7 +58,7 @@ export async function changelogDiff(args: DiffArgs): Promise<DiffResult> {
     const version2 = args.version2.trim();
 
     // Read and parse changelog
-    const content = await readFile(filePath);
+    const content = await readChangelog(filePath);
     const changelog = parseChangelog(content);
 
     // Find both versions
