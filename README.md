@@ -49,8 +49,13 @@ Simple code operations (cleanup, explain, optimize). May use natural language in
 - **`.cursorrules`** - Comprehensive AI agent guidelines and guardrails
 - **`.clauderc`** - Claude Code specific configuration
 - **`CONTRIBUTING.md`** - Development workflow and best practices
+- **`PARALLEL_WORK_GUIDELINES.md`** - Guidelines for multiple agents working simultaneously
+- **`QUICK_REFERENCE.md`** - Quick lookup for common patterns
 
-**Key Rule:** Make incremental git commits for every logical change. See guidelines for details.
+**Key Rules:**
+- Make incremental git commits for every logical change
+- Write comprehensive tests for all features (Playwright)
+- When working in parallel: communicate, coordinate, isolate
 
 ## Installation
 
