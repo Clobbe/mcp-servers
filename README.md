@@ -42,6 +42,16 @@ Convert PRDs to executable task files and run iterative development loops.
 
 Simple code operations (cleanup, explain, optimize). May use natural language instead.
 
+## For AI Agents & Contributors
+
+**Before making any changes, read the project guidelines:**
+
+- **`.cursorrules`** - Comprehensive AI agent guidelines and guardrails
+- **`.clauderc`** - Claude Code specific configuration
+- **`CONTRIBUTING.md`** - Development workflow and best practices
+
+**Key Rule:** Make incremental git commits for every logical change. See guidelines for details.
+
 ## Installation
 
 ### Prerequisites
