@@ -404,17 +404,40 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
 
 ### Before Committing Code
 
-1. **Ensure it builds**:
+1. **Run linting**:
+   ```bash
+   npm run lint          # Check for issues
+   npm run lint:fix      # Auto-fix issues
+   ```
+
+2. **Format code**:
+   ```bash
+   npm run format        # Format all files
+   ```
+
+3. **Run all tests**:
+   ```bash
+   npm test
+   npm test -- --coverage  # Check coverage
+   ```
+
+4. **Check TypeScript**:
+   ```bash
+   npm run type-check
+   ```
+
+5. **Build**:
    ```bash
    npm run build
    ```
 
-2. **Check for TypeScript errors**:
+6. **Run validation** (runs all checks):
    ```bash
-   npx tsc --noEmit
+   npm run validate
    ```
 
-3. **Test manually** (see Testing Guidelines)
+**Note:** Git hooks will automatically run linting and formatting on commit,
+and run tests on push. But it's better to run checks before committing.
 
 ### Build Artifacts
 
