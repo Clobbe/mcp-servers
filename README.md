@@ -55,7 +55,32 @@ Simple code operations (cleanup, explain, optimize). May use natural language in
 **Key Rules:**
 - Make incremental git commits for every logical change
 - Write comprehensive tests for all features (Playwright)
+- Follow code quality standards (ESLint, Prettier, TypeScript strict)
+- Document all code with JSDoc comments
 - When working in parallel: communicate, coordinate, isolate
+
+## Code Quality Tools
+
+This project uses automated tools to enforce quality:
+
+- **ESLint** - Code linting and error detection
+- **Prettier** - Automatic code formatting
+- **TypeScript** - Strict type checking
+- **TypeDoc** - API documentation generation
+- **Husky** - Git hooks for pre-commit/pre-push validation
+- **lint-staged** - Run linters on staged files only
+
+**Quick commands:**
+```bash
+npm run lint          # Check code quality
+npm run lint:fix      # Auto-fix issues
+npm run format        # Format all files
+npm run type-check    # Check TypeScript
+npm run docs          # Generate API docs
+npm run validate      # Run all checks
+```
+
+See [CODE_QUALITY.md](./CODE_QUALITY.md) for detailed guidelines.
 
 ## Installation
 
