@@ -1,9 +1,9 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { analyzeComplexity } from '../../src/tools/analyze-complexity.js';
 import fs from 'fs/promises';
 import path from 'path';
 
-describe('code_analyze_complexity', () => {
+test.describe('code_analyze_complexity', () => {
   const testFilesDir = path.join(process.cwd(), '__tests__', 'fixtures');
 
   // Create test fixtures before tests
@@ -41,7 +41,7 @@ export function complexFunction(x: number): number {
     await fs.rm(testFilesDir, { recursive: true, force: true });
   });
 
-  describe('happy path', () => {
+  test.describe('happy path', () => {
     test('should analyze complexity of valid file', async () => {
       const result = await analyzeComplexity({
         file_path: path.join(testFilesDir, 'test-complexity.ts'),
@@ -75,7 +75,7 @@ export function complexFunction(x: number): number {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle non-existent file', async () => {
       const result = await analyzeComplexity({
         file_path: '/nonexistent/file.ts',
@@ -94,7 +94,7 @@ export function complexFunction(x: number): number {
     });
   });
 
-  describe('threshold handling', () => {
+  test.describe('threshold handling', () => {
     test('should use default threshold when not provided', async () => {
       const result = await analyzeComplexity({
         file_path: path.join(testFilesDir, 'test-complexity.ts'),

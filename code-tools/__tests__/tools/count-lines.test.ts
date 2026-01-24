@@ -1,9 +1,9 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { countLinesTool } from '../../src/tools/count-lines.js';
 import fs from 'fs/promises';
 import path from 'path';
 
-describe('code_count_lines', () => {
+test.describe('code_count_lines', () => {
   const testFilesDir = path.join(process.cwd(), '__tests__', 'fixtures');
 
   test.beforeAll(async () => {
@@ -29,7 +29,7 @@ const x = 10;
     await fs.rm(testFilesDir, { recursive: true, force: true });
   });
 
-  describe('happy path', () => {
+  test.describe('happy path', () => {
     test('should count lines in a single file', async () => {
       const result = await countLinesTool({
         path: path.join(testFilesDir, 'test-lines.ts'),
@@ -65,7 +65,7 @@ const x = 10;
     });
   });
 
-  describe('test file handling', () => {
+  test.describe('test file handling', () => {
     test('should exclude test files by default', async () => {
       // Create a test file
       await fs.writeFile(
@@ -99,7 +99,7 @@ const x = 10;
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle non-existent path', async () => {
       const result = await countLinesTool({
         path: '/nonexistent/path',

@@ -1,9 +1,9 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { findDuplicatesTool } from '../../src/tools/find-duplicates.js';
 import fs from 'fs/promises';
 import path from 'path';
 
-describe('code_find_duplicates', () => {
+test.describe('code_find_duplicates', () => {
   const testFilesDir = path.join(process.cwd(), '__tests__', 'fixtures', 'duplicates');
 
   test.beforeAll(async () => {
@@ -47,7 +47,7 @@ export function uniqueHandler() {
     await fs.rm(testFilesDir, { recursive: true, force: true });
   });
 
-  describe('happy path', () => {
+  test.describe('happy path', () => {
     test('should find duplicate code blocks', async () => {
       const result = await findDuplicatesTool({
         directory: testFilesDir,
@@ -79,7 +79,7 @@ export function uniqueHandler() {
     });
   });
 
-  describe('edge cases', () => {
+  test.describe('edge cases', () => {
     test('should handle empty directory', async () => {
       const emptyDir = path.join(testFilesDir, 'empty');
       await fs.mkdir(emptyDir, { recursive: true });
@@ -109,7 +109,7 @@ export function uniqueHandler() {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle non-existent directory', async () => {
       const result = await findDuplicatesTool({
         directory: '/nonexistent/directory',

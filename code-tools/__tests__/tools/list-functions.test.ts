@@ -1,9 +1,9 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { listFunctions } from '../../src/tools/list-functions.js';
 import fs from 'fs/promises';
 import path from 'path';
 
-describe('code_list_functions', () => {
+test.describe('code_list_functions', () => {
   const testFilesDir = path.join(process.cwd(), '__tests__', 'fixtures');
 
   test.beforeAll(async () => {
@@ -39,7 +39,7 @@ class MyClass {
     await fs.rm(testFilesDir, { recursive: true, force: true });
   });
 
-  describe('happy path', () => {
+  test.describe('happy path', () => {
     test('should list all functions in a file', async () => {
       const result = await listFunctions({
         file_path: path.join(testFilesDir, 'test-functions.ts'),
@@ -72,7 +72,7 @@ class MyClass {
     });
   });
 
-  describe('filtering', () => {
+  test.describe('filtering', () => {
     test('should filter private functions when include_private is false', async () => {
       const withPrivate = await listFunctions({
         file_path: path.join(testFilesDir, 'test-functions.ts'),
@@ -91,13 +91,13 @@ class MyClass {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle non-existent file', async () => {
       const result = await listFunctions({
         file_path: '/nonexistent/file.ts',
       });
 
-      expect(result.summary).toContain('Error');
+      expect(result.summary).toContain('Could not parse file');
       expect(result.error).toBeDefined();
     });
   });
