@@ -71,14 +71,82 @@ refactor: extract validation logic to separate module
 chore: update @modelcontextprotocol/sdk to 0.7.0
 ```
 
-### 3. TypeScript Strict Mode (MANDATORY)
+### 3. Comprehensive Testing with Playwright (MANDATORY)
+
+**Every feature MUST have tests. No exceptions.**
+
+- Use Playwright as the testing framework
+- Write tests BEFORE or DURING implementation (TDD encouraged)
+- Test files go in `__tests__/` directory or as `*.test.ts` files
+- Commit tests separately from implementation
+- All tests must pass before merging to main
+
+**Testing Requirements:**
+
+```typescript
+// __tests__/tool-name.test.ts
+import { test, expect } from '@playwright/test';
+import { myTool } from '../src/tools/my-tool.js';
+
+test.describe('my_tool', () => {
+  test('should handle valid input', async () => {
+    const result = await myTool({ param: 'value' });
+    expect(result.success).toBe(true);
+  });
+
+  test('should handle invalid input', async () => {
+    const result = await myTool({ param: '' });
+    expect(result.success).toBe(false);
+    expect(result.message).toContain('Error');
+  });
+
+  test('should handle edge cases', async () => {
+    // Test edge cases
+  });
+});
+```
+
+**Test Coverage Requirements:**
+- Happy path (valid inputs)
+- Error cases (invalid inputs)
+- Edge cases (empty, null, undefined, extreme values)
+- Integration tests (tool interaction with MCP server)
+- At minimum 80% code coverage
+
+**Testing Workflow:**
+
+```bash
+# 1. Write implementation
+git add src/tools/new-tool.ts
+git commit -m "feat: add new_tool implementation"
+
+# 2. Write tests
+git add __tests__/new-tool.test.ts
+git commit -m "test: add comprehensive tests for new_tool"
+
+# 3. Run tests
+npm test
+
+# 4. Fix any failures
+git add src/tools/new-tool.ts
+git commit -m "fix: handle edge case in new_tool"
+
+# 5. Ensure all tests pass before proceeding
+```
+
+**Test File Naming:**
+- `__tests__/tool-name.test.ts` for tool tests
+- `__tests__/utils/helper.test.ts` for utility tests
+- Mirror the `src/` structure in `__tests__/`
+
+### 4. TypeScript Strict Mode (MANDATORY)
 
 - Always use TypeScript strict mode
 - No `any` types without explicit reason and comment
 - Provide proper type definitions for all functions
 - Export types that might be reused
 
-### 4. MCP Server Structure (MANDATORY)
+### 5. MCP Server Structure (MANDATORY)
 
 Each MCP server MUST follow this structure:
 
@@ -87,6 +155,7 @@ server-name/
 ├── README.md                 # Comprehensive documentation
 ├── package.json             # Node.js package config
 ├── tsconfig.json            # TypeScript config (strict mode)
+├── playwright.config.ts     # Playwright test config
 ├── src/
 │   ├── index.ts            # MCP server entry point
 │   ├── tools/              # Individual tool implementations
@@ -94,6 +163,11 @@ server-name/
 │   └── utils/              # Shared utilities
 │       ├── types.ts        # Type definitions
 │       └── helpers.ts      # Helper functions
+├── __tests__/              # Test files (mirrors src/)
+│   ├── tools/
+│   │   └── tool-name.test.ts
+│   └── utils/
+│       └── helpers.test.ts
 └── build/                  # Compiled output (gitignored)
 ```
 
@@ -164,24 +238,36 @@ git commit -m "docs: document new_tool usage and examples"
    git commit -m "feat: add new_tool implementation"
    ```
 
-4. **Wire into server**:
+4. **Write tests**:
+   ```bash
+   git add __tests__/tools/new-tool.test.ts
+   git commit -m "test: add comprehensive tests for new_tool"
+   ```
+
+5. **Wire into server**:
    ```bash
    git add src/index.ts
    git commit -m "feat: register new_tool in MCP server"
    ```
 
-5. **Add documentation**:
+6. **Add documentation**:
    ```bash
    git add README.md
    git commit -m "docs: add new_tool usage examples"
    ```
 
-6. **Build and test**:
+7. **Run tests and fix issues**:
+   ```bash
+   npm test
+   # If tests fail, fix and commit
+   git add src/tools/new-tool.ts
+   git commit -m "fix: address edge case discovered in tests"
+   ```
+
+8. **Build and verify**:
    ```bash
    npm run build
-   # Test manually
-   git add .  # Only if there are fixes needed
-   git commit -m "fix: address new_tool edge cases"
+   # Test manually in MCP client
    ```
 
 ### Creating a New MCP Server
@@ -241,9 +327,65 @@ export function parseChangelog(content: string): ChangelogStructure {
 
 ## Testing Guidelines
 
-### Manual Testing (Current)
+### Automated Testing with Playwright (REQUIRED)
 
-Before committing, ALWAYS test:
+**All code MUST have tests. No PRs without tests.**
+
+```bash
+# Run all tests
+npm test
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run specific test file
+npm test __tests__/tools/my-tool.test.ts
+
+# Run with coverage
+npm test -- --coverage
+```
+
+**Test Structure:**
+
+```typescript
+import { test, expect, describe } from '@playwright/test';
+
+describe('tool_name', () => {
+  describe('happy path', () => {
+    test('should process valid input correctly', async () => {
+      const result = await myTool({ param: 'valid' });
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('error handling', () => {
+    test('should reject invalid input', async () => {
+      const result = await myTool({ param: '' });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('edge cases', () => {
+    test('should handle empty values', async () => {
+      // Test edge case
+    });
+
+    test('should handle extreme values', async () => {
+      // Test edge case
+    });
+  });
+});
+```
+
+**Coverage Requirements:**
+- Minimum 80% code coverage
+- 100% coverage for critical paths
+- All error cases must be tested
+- All edge cases must be tested
+
+### Manual Testing (Integration)
+
+After automated tests pass, test manually:
 
 ```bash
 # Build
@@ -257,13 +399,6 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
 # 2. Restart client
 # 3. Invoke tool via natural language
 ```
-
-### Automated Testing (Future)
-
-When adding tests:
-- Use Jest or Vitest
-- Commit test files separately
-- Test files go in `__tests__/` or `*.test.ts`
 
 ## Build and Compilation
 
@@ -321,10 +456,13 @@ When adding tests:
 - Use `git add .` without reviewing changes
 - Commit build artifacts
 - Skip documentation updates
+- Skip writing tests (NO EXCEPTIONS)
 - Use `any` types without justification
 - Ignore TypeScript errors
 - Make breaking changes without versioning
 - Commit directly to main without testing
+- Deploy code without running tests
+- Merge PRs with failing tests
 
 ### ✅ DO
 
@@ -332,10 +470,13 @@ When adding tests:
 - Review changes before committing (`git diff`)
 - Keep build/ directory clean
 - Document every feature and change
+- Write tests for every feature (MANDATORY)
+- Run tests before committing (`npm test`)
 - Use proper TypeScript types
 - Fix all TypeScript errors before committing
 - Follow semantic versioning
-- Test before committing
+- Test manually in MCP client after automated tests pass
+- Ensure 80%+ code coverage
 
 ## MCP-Specific Guidelines
 
@@ -442,11 +583,15 @@ git tag v1.2.0
 Before every commit, verify:
 
 - [ ] Code compiles (`npm run build`)
-- [ ] No TypeScript errors
-- [ ] Tested manually
+- [ ] No TypeScript errors (`npx tsc --noEmit`)
+- [ ] All tests pass (`npm test`)
+- [ ] Code coverage meets minimum (80%)
+- [ ] Tested manually in MCP client (for features)
 - [ ] Documentation updated (if needed)
 - [ ] Commit message follows conventional format
 - [ ] Commit is small and focused (one logical change)
+- [ ] No console.log() or debugging code left in
+- [ ] No commented-out code (remove or document why)
 
 ## Questions or Clarifications?
 
@@ -457,16 +602,88 @@ If you're unsure about:
 
 **Ask the user first.** Don't guess.
 
+## Additional Guardrails
+
+### 7. Security (MANDATORY)
+
+- Never commit secrets, API keys, or credentials
+- Use environment variables for sensitive data
+- Validate all user inputs
+- Sanitize file paths to prevent directory traversal
+- Use parameterized queries if interacting with databases
+- Keep dependencies up to date for security patches
+
+### 8. Performance (IMPORTANT)
+
+- Avoid unnecessary file I/O operations
+- Use streaming for large files
+- Implement proper caching where appropriate
+- Don't block the event loop with synchronous operations
+- Profile performance-critical code
+
+### 9. Accessibility & User Experience (IMPORTANT)
+
+- Provide clear, actionable error messages
+- Include progress indicators for long-running operations
+- Support graceful degradation
+- Handle edge cases (empty inputs, missing files, etc.)
+- Provide helpful suggestions when operations fail
+
+### 10. Code Quality (MANDATORY)
+
+- No code duplication (DRY principle)
+- Functions should do one thing well (Single Responsibility)
+- Maximum function length: 50 lines (split if longer)
+- Maximum file length: 300 lines (split if longer)
+- No magic numbers (use named constants)
+- No nested ternaries (use if-else instead)
+- Prefer early returns over deep nesting
+
+### 11. CI/CD Integration (FUTURE)
+
+When setting up CI/CD:
+- All tests must pass before merge
+- Code coverage gates (minimum 80%)
+- TypeScript compilation must succeed
+- Linting must pass
+- No security vulnerabilities allowed
+
+### 12. Logging and Debugging (IMPORTANT)
+
+- Use `console.error()` for stderr (MCP servers use stdout for protocol)
+- Remove `console.log()` before committing
+- Add meaningful error messages with context
+- Log errors with enough detail for debugging
+
+Example:
+```typescript
+try {
+  await operation();
+} catch (error) {
+  console.error('Failed to process changelog:', {
+    operation: 'changelog_update',
+    error: error instanceof Error ? error.message : String(error),
+    context: { file: changelogPath }
+  });
+  throw error;
+}
+```
+
 ## Summary for AI Agents
 
 When working on this project:
 
 1. **Make incremental commits** - This is the #1 rule
-2. **Follow conventional commits** - Proper commit messages
-3. **Use TypeScript strictly** - No shortcuts
-4. **Follow the structure** - Don't invent new patterns
-5. **Document everything** - Code + usage examples
-6. **Test before committing** - Build + manual test
-7. **Ask if unsure** - Don't guess
+2. **Write comprehensive tests** - No code without tests (using Playwright)
+3. **Follow conventional commits** - Proper commit messages
+4. **Use TypeScript strictly** - No shortcuts, no `any` types
+5. **Follow the structure** - Don't invent new patterns
+6. **Document everything** - Code + usage examples + tests
+7. **Test before committing** - Automated tests + manual verification
+8. **Security first** - Never commit secrets, validate inputs
+9. **Ask if unsure** - Don't guess
 
-**Remember:** Small commits = easy to review = easy to revert = professional history
+**Remember:** 
+- Small commits = easy to review = easy to revert = professional history
+- No code without tests = reliable software = fewer bugs
+- Tests first = better design = clearer requirements
