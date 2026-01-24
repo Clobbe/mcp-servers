@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged
+npx lint-staged
+
+# Check for file locks in parallel work
+if grep -v '^#' .file-locks | grep -v '^$' > /dev/null; then
+  echo "⚠️  Warning: File locks detected in .file-locks"
+  echo "Please ensure you've released your locks before committing"
+  grep -v '^#' .file-locks | grep -v '^$'
+fi

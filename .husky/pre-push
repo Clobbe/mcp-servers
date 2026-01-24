@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🧪 Running tests before push..."
+
+# Run tests
+npm test
+
+# Check TypeScript compilation
+echo "🔨 Checking TypeScript compilation..."
+npx tsc --noEmit
+
+# Check for debugging code
+echo "🔍 Checking for debugging code..."
+if git diff --cached --name-only | grep -E '\.(ts|tsx)$' | xargs grep -n 'console\.log' 2>/dev/null; then
+  echo "❌ Error: console.log() found in staged files"
+  echo "Please remove console.log() statements before pushing"
+  exit 1
+fi
+
+echo "✅ All pre-push checks passed"
