@@ -6,7 +6,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { readFileContent, isTypeScriptOrJavaScript } from '../utils/parser.js';
 import { findDuplicates } from '../utils/analyzer.js';
-import type { ToolResponse, DuplicateBlock } from '../utils/types.js';
+import type { ToolResponse } from '../utils/types.js';
 
 export const findDuplicatesSchema = {
   name: 'code_find_duplicates',

@@ -6,7 +6,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { readFileContent, isTypeScriptOrJavaScript } from '../utils/parser.js';
 import { countLines } from '../utils/analyzer.js';
-import type { ToolResponse, LineCount, FileLineCount } from '../utils/types.js';
+import type { ToolResponse, FileLineCount } from '../utils/types.js';
 
 export const countLinesSchema = {
   name: 'code_count_lines',

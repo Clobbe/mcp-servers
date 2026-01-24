@@ -3,7 +3,7 @@
  */
 
 import { parseSourceFile, extractFunctions } from '../utils/parser.js';
-import type { ToolResponse, FunctionInfo } from '../utils/types.js';
+import type { ToolResponse } from '../utils/types.js';
 
 export const listFunctionsSchema = {
   name: 'code_list_functions',
