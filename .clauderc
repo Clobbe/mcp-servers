@@ -1,0 +1,117 @@
+# Claude Code Project Configuration
+
+## Project Context
+
+This is the MCP Servers collection - a set of Model Context Protocol servers for development workflows.
+
+**Repository**: ~/dev/tooling/mcp-servers/
+**Type**: TypeScript/Node.js MCP Servers
+**Target**: Claude Code, OpenCode, Continue.dev, and other MCP clients
+
+## Critical Instructions
+
+### Git Workflow - EXTREMELY IMPORTANT
+
+**NEVER make large commits. ALWAYS commit incrementally.**
+
+You MUST commit after EACH logical change:
+- After creating a new file → commit
+- After implementing a function → commit  
+- After wiring components together → commit
+- After updating docs → commit
+
+See `.cursorrules` for detailed commit guidelines.
+
+### Conventional Commits Required
+
+Format: `<type>: <description>`
+
+Types: feat, fix, docs, refactor, test, chore, perf
+
+### Before ANY Code Changes
+
+1. Read `.cursorrules` thoroughly
+2. Understand the project structure
+3. Plan incremental commits BEFORE writing code
+
+### Development Pattern
+
+```
+Create file → Commit
+Add utility → Commit
+Add tool → Commit
+Wire tool → Commit
+Document → Commit
+Test → Fix → Commit
+```
+
+NOT:
+```
+Create everything → One big commit ❌
+```
+
+## Project-Specific Rules
+
+### MCP Server Structure
+
+```
+server-name/
+├── src/
+│   ├── index.ts      # MCP entry point
+│   ├── tools/        # One tool per file
+│   └── utils/        # Shared utilities
+├── README.md         # Required documentation
+├── package.json
+└── tsconfig.json
+```
+
+### TypeScript Configuration
+
+- Strict mode enabled
+- ESM modules (Node16)
+- Explicit `.js` imports required
+- No `any` without justification
+
+### Testing
+
+Manual testing required before commits:
+```bash
+npm run build
+echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
+```
+
+## File Locations
+
+- **Source**: `src/` (TypeScript)
+- **Build**: `build/` (gitignored)
+- **Docs**: `README.md` (per server) + root `README.md`
+- **Config**: `.cursorrules` (AI guidelines)
+
+## When Adding New Tools
+
+Follow this sequence (commit after each step):
+
+1. Add types (if needed) → commit
+2. Add utilities (if needed) → commit  
+3. Implement tool → commit
+4. Register in index.ts → commit
+5. Document in README → commit
+
+## When Creating New Server
+
+1. Create structure → commit
+2. Add package.json → commit
+3. Add tsconfig.json → commit
+4. Add each utility → commit
+5. Add each tool → commit
+6. Add server entry → commit
+7. Add README → commit
+8. Update root README → commit
+
+## Remember
+
+- Read `.cursorrules` for complete guidelines
+- When in doubt, ASK the user
+- Small commits > large commits
+- Documentation is mandatory
+- Test before committing
