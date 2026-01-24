@@ -5,16 +5,19 @@
 ### 🚨 Critical Rules
 
 1. **Incremental Commits** - Commit after EVERY logical change, not at the end
-2. **Conventional Commits** - Use `feat:`, `fix:`, `docs:`, etc.
-3. **TypeScript Strict** - No `any` without reason
-4. **Test Before Commit** - `npm run build` + manual test
+2. **Comprehensive Tests** - Write Playwright tests for ALL features (min 80% coverage)
+3. **Conventional Commits** - Use `feat:`, `fix:`, `docs:`, `test:`, etc.
+4. **TypeScript Strict** - No `any` without reason
+5. **Test Before Commit** - `npm test` + `npm run build` + manual test
 
 ### 📋 Commit Checklist
 
 Before every commit:
-- [ ] Code compiles
-- [ ] No TypeScript errors
-- [ ] Tested manually
+- [ ] Code compiles (`npm run build`)
+- [ ] No TypeScript errors (`npx tsc --noEmit`)
+- [ ] All tests pass (`npm test`)
+- [ ] Coverage >= 80% (`npm test -- --coverage`)
+- [ ] Tested manually in MCP client (for features)
 - [ ] Docs updated (if needed)
 - [ ] Commit message uses conventional format
 - [ ] Commit is small and focused
@@ -22,11 +25,15 @@ Before every commit:
 ### 🔄 Development Pattern
 
 ```
-1. Create file     → git commit -m "feat: add X"
-2. Add function    → git commit -m "feat: implement Y"
-3. Wire together   → git commit -m "feat: integrate Z"
-4. Update docs     → git commit -m "docs: document Z"
-5. Test & fix      → git commit -m "fix: handle edge case"
+1. Create types    → git commit -m "feat: add types for X"
+2. Add utility     → git commit -m "feat: implement utility Y"
+3. Write tests     → git commit -m "test: add tests for utility Y"
+4. Add tool        → git commit -m "feat: implement tool Z"
+5. Write tests     → git commit -m "test: add comprehensive tests for Z"
+6. Wire together   → git commit -m "feat: register Z in server"
+7. Update docs     → git commit -m "docs: document Z usage"
+8. Run tests       → npm test
+9. Fix issues      → git commit -m "fix: handle edge case in Z"
 ```
 
 ### ✅ Good Commits
@@ -73,6 +80,18 @@ mcp-servers/
 ```bash
 # Install dependencies
 cd server-name && npm install
+
+# Run tests (REQUIRED before commits)
+npm test
+
+# Run tests with coverage
+npm test -- --coverage
+
+# Run tests in watch mode
+npm test -- --watch
+
+# Run specific test file
+npm test __tests__/tools/my-tool.test.ts
 
 # Build
 npm run build
@@ -197,19 +216,67 @@ export function myFunction(input: string): Result {
 ## Testing Workflow
 
 ```bash
-# 1. Build
+# 1. Write tests
+# Create __tests__/tools/my-tool.test.ts
+
+# 2. Run automated tests
+npm test
+
+# 3. Check coverage
+npm test -- --coverage
+# Ensure >= 80%
+
+# 4. Build
 npm run build
 
-# 2. Test tool listing
+# 5. Test tool listing
 echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
 
-# 3. Update MCP client config
+# 6. Update MCP client config
 # Edit ~/.claude/settings.json or equivalent
 
-# 4. Restart MCP client
+# 7. Restart MCP client
 
-# 5. Test via natural language
+# 8. Test via natural language
 # "Use tool_name to do X"
+```
+
+## Playwright Test Template
+
+```typescript
+import { test, expect, describe } from '@playwright/test';
+import { myTool } from '../src/tools/my-tool.js';
+
+describe('my_tool', () => {
+  describe('happy path', () => {
+    test('should process valid input', async () => {
+      const result = await myTool({ param: 'valid' });
+      expect(result.success).toBe(true);
+      expect(result.summary).toContain('Success');
+    });
+  });
+
+  describe('error handling', () => {
+    test('should reject empty input', async () => {
+      const result = await myTool({ param: '' });
+      expect(result.success).toBe(false);
+      expect(result.summary).toContain('Error');
+    });
+
+    test('should handle missing file', async () => {
+      const result = await myTool({ param: '/nonexistent' });
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('edge cases', () => {
+    test('should handle very long input', async () => {
+      const longString = 'a'.repeat(10000);
+      const result = await myTool({ param: longString });
+      expect(result).toBeDefined();
+    });
+  });
+});
 ```
 
 ## When Unsure
@@ -230,4 +297,7 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | node build/index.js
 
 **Small commits = Professional history = Easy to review = Easy to revert**
 
-Make 5-15 commits per feature, not 1!
+**Tests = Reliable software = Fewer bugs = Better design**
+
+Make 5-15 commits per feature, not 1!  
+Write tests for EVERY feature, no exceptions!
