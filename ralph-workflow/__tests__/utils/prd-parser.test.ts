@@ -1,8 +1,8 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { parsePRD } from '../../src/utils/prd-parser.js';
 
-describe('parsePRD', () => {
-  describe('title extraction', () => {
+test.test.describe('parsePRD', () => {
+  test.test.describe('title extraction', () => {
     test('should extract title from H1 heading', async () => {
       const prd = '# My Awesome Project\n\nSome description';
       const parsed = parsePRD(prd);
@@ -16,7 +16,7 @@ describe('parsePRD', () => {
     });
   });
 
-  describe('description extraction', () => {
+  test.test.describe('description extraction', () => {
     test('should extract description from Description section', async () => {
       const prd = `
 # Project Title
@@ -54,7 +54,7 @@ Project overview text here.
     });
   });
 
-  describe('features extraction', () => {
+  test.test.describe('features extraction', () => {
     test('should extract features with bold names', async () => {
       const prd = `
 # Project
@@ -94,7 +94,7 @@ Project overview text here.
     });
   });
 
-  describe('requirements extraction', () => {
+  test.test.describe('requirements extraction', () => {
     test('should extract requirements from list', async () => {
       const prd = `
 ## Requirements
@@ -132,7 +132,7 @@ Project overview text here.
     });
   });
 
-  describe('technical details extraction', () => {
+  test.test.describe('technical details extraction', () => {
     test('should extract technical details section', async () => {
       const prd = `
 ## Technical Details
@@ -164,7 +164,7 @@ Using TypeScript and Node.js for backend.
     });
   });
 
-  describe('complete PRD parsing', () => {
+  test.test.describe('complete PRD parsing', () => {
     test('should parse complex PRD correctly', async () => {
       const prd = `
 # E-Commerce Platform

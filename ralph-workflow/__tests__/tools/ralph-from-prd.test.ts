@@ -1,7 +1,7 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { ralphFromPrd } from '../../src/tools/ralph-from-prd.js';
 
-describe('ralphFromPrd', () => {
+test.describe('ralphFromPrd', () => {
   const samplePRD = `
 # E-Commerce Platform
 
@@ -28,7 +28,7 @@ PostgreSQL database.
 Deployed on AWS.
   `;
 
-  describe('successful workflow generation', () => {
+  test.describe('successful workflow generation', () => {
     test('should generate workflow from valid PRD', async () => {
       const result = await ralphFromPrd({
         prd_content: samplePRD,
@@ -62,7 +62,7 @@ Deployed on AWS.
     });
   });
 
-  describe('output formats', () => {
+  test.describe('output formats', () => {
     test('should generate JSON format when requested', async () => {
       const result = await ralphFromPrd({
         prd_content: samplePRD,
@@ -125,7 +125,7 @@ Deployed on AWS.
     });
   });
 
-  describe('PRD parsing integration', () => {
+  test.describe('PRD parsing integration', () => {
     test('should extract project title', async () => {
       const result = await ralphFromPrd({
         prd_content: samplePRD,
@@ -166,7 +166,7 @@ Deployed on AWS.
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle empty PRD', async () => {
       const result = await ralphFromPrd({
         prd_content: '',
@@ -214,7 +214,7 @@ Just a description, no features listed.
     });
   });
 
-  describe('workflow quality', () => {
+  test.describe('workflow quality', () => {
     test('should generate workflow with all standard phases', async () => {
       const result = await ralphFromPrd({
         prd_content: samplePRD,
@@ -261,7 +261,7 @@ Just a description, no features listed.
     });
   });
 
-  describe('complex PRD scenarios', () => {
+  test.describe('complex PRD scenarios', () => {
     test('should handle PRD with multiple languages', async () => {
       const multiLangPRD = `
 # Full Stack App

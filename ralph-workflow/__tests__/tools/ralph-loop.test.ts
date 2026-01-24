@@ -1,10 +1,10 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { ralphLoop } from '../../src/tools/ralph-loop.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
-describe('ralphLoop', () => {
+test.describe('ralphLoop', () => {
   let tempDir: string;
   let workflowPath: string;
 
@@ -71,7 +71,7 @@ describe('ralphLoop', () => {
     await writeFile(workflowPath, JSON.stringify(sampleWorkflow, null, 2));
   });
 
-  describe('successful execution', () => {
+  test.describe('successful execution', () => {
     test('should execute workflow from file', async () => {
       const result = await ralphLoop({
         workflow_path: workflowPath,
@@ -117,7 +117,7 @@ describe('ralphLoop', () => {
     });
   });
 
-  describe('iteration limits', () => {
+  test.describe('iteration limits', () => {
     test('should respect max_iterations parameter', async () => {
       const result = await ralphLoop({
         workflow_path: workflowPath,
@@ -180,7 +180,7 @@ describe('ralphLoop', () => {
     });
   });
 
-  describe('auto_commit parameter', () => {
+  test.describe('auto_commit parameter', () => {
     test('should accept auto_commit parameter', async () => {
       const result = await ralphLoop({
         workflow_path: workflowPath,
@@ -200,7 +200,7 @@ describe('ralphLoop', () => {
     });
   });
 
-  describe('error handling', () => {
+  test.describe('error handling', () => {
     test('should handle non-existent file', async () => {
       const result = await ralphLoop({
         workflow_path: '/nonexistent/path/workflow.json',
@@ -275,7 +275,7 @@ describe('ralphLoop', () => {
     });
   });
 
-  describe('execution tracking', () => {
+  test.describe('execution tracking', () => {
     test('should include start and end times for tasks', async () => {
       const result = await ralphLoop({
         workflow_path: workflowPath,
@@ -312,7 +312,7 @@ describe('ralphLoop', () => {
     });
   });
 
-  describe('summary reporting', () => {
+  test.describe('summary reporting', () => {
     test('should report number of completed tasks', async () => {
       const result = await ralphLoop({
         workflow_path: workflowPath,
@@ -339,7 +339,7 @@ describe('ralphLoop', () => {
     });
   });
 
-  describe('workflow structure validation', () => {
+  test.describe('workflow structure validation', () => {
     test('should handle workflow with metadata', async () => {
       const result = await ralphLoop({
         workflow_path: workflowPath,

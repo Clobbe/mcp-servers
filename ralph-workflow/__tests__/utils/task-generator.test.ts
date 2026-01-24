@@ -1,8 +1,8 @@
-import { test, expect, describe } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { generateWorkflow } from '../../src/utils/task-generator.js';
 import type { ParsedPRD, TechnologyStack } from '../../src/utils/types.js';
 
-describe('generateWorkflow', () => {
+test.describe('generateWorkflow', () => {
   const basicPRD: ParsedPRD = {
     title: 'Test Project',
     description: 'A test project',
@@ -21,7 +21,7 @@ describe('generateWorkflow', () => {
     tools: ['git', 'playwright'],
   };
 
-  describe('metadata generation', () => {
+  test.describe('metadata generation', () => {
     test('should generate metadata with project name and timestamp', async () => {
       const workflow = generateWorkflow(basicPRD, basicTech);
 
@@ -38,7 +38,7 @@ describe('generateWorkflow', () => {
     });
   });
 
-  describe('phase generation', () => {
+  test.describe('phase generation', () => {
     test('should generate standard phases', async () => {
       const workflow = generateWorkflow(basicPRD, basicTech);
 
@@ -68,7 +68,7 @@ describe('generateWorkflow', () => {
     });
   });
 
-  describe('implementation phases', () => {
+  test.describe('implementation phases', () => {
     test('should create Core Features phase for high-priority features', async () => {
       const workflow = generateWorkflow(basicPRD, basicTech);
 
@@ -127,7 +127,7 @@ describe('generateWorkflow', () => {
     });
   });
 
-  describe('testing phase', () => {
+  test.describe('testing phase', () => {
     test('should use Playwright when specified in tools', async () => {
       const workflow = generateWorkflow(basicPRD, basicTech);
 
@@ -158,7 +158,7 @@ describe('generateWorkflow', () => {
     });
   });
 
-  describe('deployment phase', () => {
+  test.describe('deployment phase', () => {
     test('should include build task', async () => {
       const workflow = generateWorkflow(basicPRD, basicTech);
 
@@ -189,7 +189,7 @@ describe('generateWorkflow', () => {
     });
   });
 
-  describe('task commands generation', () => {
+  test.describe('task commands generation', () => {
     test('should generate TypeScript init commands', async () => {
       const workflow = generateWorkflow(basicPRD, basicTech);
 
@@ -228,7 +228,7 @@ describe('generateWorkflow', () => {
     });
   });
 
-  describe('estimated times', () => {
+  test.describe('estimated times', () => {
     test('should include estimated time for all tasks', async () => {
       const workflow = generateWorkflow(basicPRD, basicTech);
 

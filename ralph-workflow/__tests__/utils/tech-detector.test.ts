@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 import { detectTechnology } from '../../src/utils/tech-detector.js';
 
-test.describe('detectTechnology', () => {
-  test.describe('language detection', () => {
+test.test.describe('detectTechnology', () => {
+  test.test.describe('language detection', () => {
     test('should detect TypeScript', async () => {
       const prd = 'We will use TypeScript for type safety';
       const tech = detectTechnology(prd);
@@ -28,7 +28,7 @@ test.describe('detectTechnology', () => {
     });
   });
 
-  test.describe('framework detection', () => {
+  test.test.describe('framework detection', () => {
     test('should detect React', async () => {
       const prd = 'Frontend built with React';
       const tech = detectTechnology(prd);
@@ -48,7 +48,7 @@ test.describe('detectTechnology', () => {
     });
   });
 
-  test.describe('database detection', () => {
+  test.test.describe('database detection', () => {
     test('should detect PostgreSQL', async () => {
       const prd = 'Data stored in PostgreSQL database';
       const tech = detectTechnology(prd);
@@ -62,7 +62,7 @@ test.describe('detectTechnology', () => {
     });
   });
 
-  test.describe('case insensitivity', () => {
+  test.test.describe('case insensitivity', () => {
     test('should detect technologies regardless of case', async () => {
       const prd = 'Using TYPESCRIPT, React, POSTGRESQL, and Docker';
       const tech = detectTechnology(prd);
