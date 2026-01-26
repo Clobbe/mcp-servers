@@ -1,0 +1,162 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║              MCP SERVERS - QUICK START REFERENCE CARD                 ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+📦 INSTALLATION (ONE-TIME SETUP)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. Navigate to directory:
+   cd ~/dev/tooling/mcp-servers
+
+2. Install & build all servers:
+   for server in prd-generator ralph-workflow changelog-manager code-tools; do
+     cd $server && npm install && npm run build && cd ..
+   done
+
+3. Configure your AI platform:
+   Edit ~/.claude/settings.json (or ~/.opencode/settings.json)
+   
+   Add absolute paths to each server's build/index.js
+   Example: /Users/YOUR_USERNAME/dev/tooling/mcp-servers/prd-generator/build/index.js
+
+4. Restart your AI platform
+
+⚙️ CONFIGURATION TEMPLATE (Claude Code/Gemini)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+{
+  "mcpServers": {
+    "prd-generator": {
+      "command": "node",
+      "args": ["FULL_PATH/prd-generator/build/index.js"]
+    },
+    "ralph-workflow": {
+      "command": "node",
+      "args": ["FULL_PATH/ralph-workflow/build/index.js"]
+    },
+    "changelog-manager": {
+      "command": "node",
+      "args": ["FULL_PATH/changelog-manager/build/index.js"]
+    },
+    "code-tools": {
+      "command": "node",
+      "args": ["FULL_PATH/code-tools/build/index.js"]
+    }
+  }
+}
+
+Replace FULL_PATH with: /Users/YOUR_USERNAME/dev/tooling/mcp-servers
+
+🎯 AVAILABLE TOOLS (19 TOTAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 PRD Generator (3 tools):
+   • prd_create              - Create PRD from structured input
+   • prd_from_template       - Create from template (5 types)
+   • prd_validate            - Validate PRD with quality score
+
+🔄 Ralph Workflow (2 tools):
+   • ralph_from_prd          - Generate workflow from PRD
+   • ralph_loop              - Execute workflow tasks
+
+📋 Changelog Manager (9 tools):
+   • changelog_init          - Initialize CHANGELOG.md
+   • changelog_entry_add     - Add single entry
+   • changelog_update        - Update from git commits
+   • changelog_validate      - Validate format
+   • changelog_generate_release - Create release version
+   • changelog_diff          - Compare versions
+   • changelog_search        - Search entries
+   • changelog_export        - Export to JSON/HTML/text
+   • changelog_stats         - Get statistics
+
+🔍 Code Tools (5 tools):
+   • code_analyze_complexity - Cyclomatic complexity
+   • code_find_duplicates    - Find duplicate code
+   • code_list_functions     - List all functions
+   • code_count_lines        - Count LOC
+   • code_detect_issues      - Find anti-patterns
+
+💬 EXAMPLE USAGE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Ask your AI platform:
+
+"List all available MCP tools"
+→ Shows all 19 tools
+
+"Create a web-app PRD for TaskMaster using prd_from_template"
+→ Generates complete PRD with features, requirements, tech stack
+
+"Validate this PRD: [paste PRD content]"
+→ Returns quality score, issues, compatibility check
+
+"Generate a workflow from the TaskMaster PRD"
+→ Creates implementation workflow with phases and tasks
+
+"Initialize a changelog for this project"
+→ Creates CHANGELOG.md in Keep a Changelog format
+
+"Analyze complexity of src/index.ts"
+→ Returns cyclomatic complexity metrics
+
+🔄 COMPLETE LIFECYCLE EXAMPLE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. "Create a mobile-app PRD for FitTracker"
+2. "Validate the FitTracker PRD"
+3. "Generate workflow from this PRD"
+4. "Execute the first 5 tasks"
+5. "Update changelog with feature: User authentication"
+6. "Analyze complexity of auth module"
+7. Iterate and repeat!
+
+✅ VERIFICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Test each server manually:
+  echo '{"jsonrpc":"2.0","id":1,"method":"tools/list"}' | \
+    node SERVER_NAME/build/index.js
+
+Should return JSON with tools list.
+
+🐛 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Issue: "Server not found"
+Fix:  Use absolute paths, restart AI platform
+
+Issue: "Cannot find module"
+Fix:  cd server-name && npm install && npm run build
+
+Issue: "Tools not appearing"
+Fix:  Check config JSON syntax, verify build succeeded
+
+Issue: TypeScript errors
+Fix:  cd server-name && rm -rf build && npm run build
+
+🔧 USEFUL COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Rebuild all:
+  for s in prd-generator ralph-workflow changelog-manager code-tools; do
+    cd $s && npm run build && cd ..; done
+
+Run all tests:
+  for s in prd-generator ralph-workflow changelog-manager code-tools; do
+    cd $s && npm test && cd ..; done
+
+Validate everything:
+  ./validate-all.sh
+
+Use aliases:
+  source aliases.sh && mcp-build-all
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Full Guide:      SETUP_GUIDE.md
+Quick Start:     QUICKSTART.md
+Main README:     README.md
+Ollama Setup:    OLLAMA_SETUP.md
+
+Individual Servers:
+  prd-generator/README.md
+  ralph-workflow/README.md
+  changelog-manager/README.md
+  code-tools/README.md
+
+╔══════════════════════════════════════════════════════════════════════╗
+║                  READY TO USE - START CREATING! 🚀                    ║
+╚══════════════════════════════════════════════════════════════════════╝
