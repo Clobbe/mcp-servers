@@ -1,6 +1,7 @@
 import { getTemplate, getAvailableTemplates } from '../utils/templates.js';
 import { buildPRD } from '../utils/prd-builder.js';
 import type { TemplateInput, TemplateType, ToolResponse } from '../utils/types.js';
+import { validateWorktree } from '../utils/worktree-validator.js';
 
 /**
  * Validate template input
@@ -60,6 +61,10 @@ export async function handlePRDFromTemplate(
 
   try {
     const input = args as TemplateInput;
+
+    // Validate worktree setup
+    const worktreeValidation = validateWorktree(input.projectName);
+
     const templateData = getTemplate(input.template, input.projectName);
 
     // Apply output format preference
@@ -74,6 +79,7 @@ export async function handlePRDFromTemplate(
       content: output.content,
       format: output.format,
       metadata: output.metadata,
+      worktreeWarning: worktreeValidation.isWorktree ? undefined : worktreeValidation.suggestion,
     };
 
     return {

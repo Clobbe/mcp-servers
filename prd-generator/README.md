@@ -166,6 +166,100 @@ Add to `~/.opencode/settings.json`:
 
 Add to `~/.gemini/config.json` (same structure as Claude Code)
 
+## Git Worktree Integration
+
+**RECOMMENDED**: All PRD generation tools include git worktree validation to promote isolated development.
+
+### Why Worktrees?
+
+Using git worktrees for PRD-based development provides:
+
+- **Clean Isolation**: Generated code stays separate from your main working directory
+- **Safe Experimentation**: Test and iterate without affecting your main branch
+- **Easy Rollback**: Discard entire worktree if the approach doesn't work
+- **Better Organization**: Each feature gets its own dedicated workspace
+- **Parallel Work**: Work on multiple features simultaneously
+
+### Workflow
+
+#### Starting a New Feature
+
+When you use `prd_create` or `prd_from_template`, the tool will:
+
+1. **Check** if you're in a git worktree
+2. **Suggest** creating one if you're not (with auto-generated commands)
+3. **Proceed** with or without worktree (your choice)
+
+**Example suggestion:**
+
+```
+💡 RECOMMENDATION: PRD/Ralph workflows work best in isolated git worktrees.
+
+Benefits:
+  • Clean isolation from your main working directory
+  • Safe experimentation without affecting main branch
+  • Easy rollback if generated code needs revision
+  • Better organization for feature development
+
+Suggested setup:
+  git worktree add -b "feature/task-management-api" "../mcp-servers-task-management-api"
+  cd "../mcp-servers-task-management-api"
+
+Then retry your command in the new worktree.
+```
+
+#### After PR is Merged
+
+Clean up the worktree:
+
+```bash
+# 1. Verify PR is merged on remote
+gh pr view <PR_NUMBER>
+
+# 2. Return to main repo and pull latest
+cd /path/to/main-repo
+git pull origin main
+
+# 3. Remove the worktree
+git worktree remove ../mcp-servers-feature-name
+
+# 4. Delete local branch (safe - only works if merged)
+git branch -d feature/feature-name
+
+# 5. Optional: Delete remote branch
+git push origin --delete feature/feature-name
+
+# 6. List remaining worktrees to verify
+git worktree list
+```
+
+### Manual Worktree Setup
+
+Create a worktree manually:
+
+```bash
+# From your main repository
+FEATURE_NAME="user-authentication"
+REPO_NAME=$(basename $(pwd))
+
+# Create worktree with new branch
+git worktree add -b "feature/${FEATURE_NAME}" "../${REPO_NAME}-${FEATURE_NAME}"
+
+# Switch to the worktree
+cd "../${REPO_NAME}-${FEATURE_NAME}"
+
+# Now use PRD tools
+```
+
+### Safety Checks
+
+Before cleaning up:
+
+- ✅ Verify PR is merged on remote
+- ✅ Ensure no uncommitted changes: `git status`
+- ✅ Confirm branch is fully merged: `git branch --merged`
+- ✅ List all worktrees: `git worktree list`
+
 ## Integration with Ralph Workflow
 
 Complete software development lifecycle:

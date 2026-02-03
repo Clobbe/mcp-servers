@@ -125,4 +125,5 @@ export interface ToolResponse {
   validation?: ValidationResult;
   error?: string;
   field?: string;
+  worktreeWarning?: string;
 }

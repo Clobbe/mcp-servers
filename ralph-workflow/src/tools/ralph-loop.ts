@@ -1,5 +1,6 @@
 import { readFile } from 'fs/promises';
 import type { Workflow, TaskExecutionResult } from '../utils/types.js';
+import { validateWorktree } from '../utils/worktree-validator.js';
 
 export const ralphLoopSchema = {
   name: 'ralph_loop',
@@ -36,6 +37,11 @@ export async function ralphLoop(args: {
     const content = await readFile(args.workflow_path, 'utf-8');
     const workflow: Workflow = JSON.parse(content);
 
+    // Validate worktree setup
+    const worktreeValidation = validateWorktree(
+      workflow.metadata?.projectName || 'workflow-execution'
+    );
+
     const results: TaskExecutionResult[] = [];
     const maxIterations = args.max_iterations !== undefined ? args.max_iterations : 10;
     let iteration = 0;
@@ -69,8 +75,14 @@ export async function ralphLoop(args: {
     const completed = results.filter((r) => r.status === 'completed').length;
     const failed = results.filter((r) => r.status === 'failed').length;
 
+    const summaryParts = [`✅ Executed ${completed} tasks (${failed} failed) in ${iteration} iterations`];
+
+    if (!worktreeValidation.isWorktree) {
+      summaryParts.push('\n\n' + worktreeValidation.suggestion);
+    }
+
     return {
-      summary: `✅ Executed ${completed} tasks (${failed} failed) in ${iteration} iterations`,
+      summary: summaryParts.join(''),
       data: { results, totalTasks: results.length, completed, failed },
     };
   } catch (error) {

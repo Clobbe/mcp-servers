@@ -1,5 +1,6 @@
 import { buildPRD } from '../utils/prd-builder.js';
 import type { PRDInput, ToolResponse } from '../utils/types.js';
+import { validateWorktree } from '../utils/worktree-validator.js';
 
 /**
  * Validate PRD creation input
@@ -98,6 +99,10 @@ export async function handlePRDCreate(
 
   try {
     const input = args as PRDInput;
+
+    // Validate worktree setup
+    const worktreeValidation = validateWorktree(input.title);
+
     const output = buildPRD(input);
 
     const response: ToolResponse = {
@@ -105,6 +110,7 @@ export async function handlePRDCreate(
       content: output.content,
       format: output.format,
       metadata: output.metadata,
+      worktreeWarning: worktreeValidation.isWorktree ? undefined : worktreeValidation.suggestion,
     };
 
     return {

@@ -2,6 +2,7 @@ import { detectTechnology } from '../utils/tech-detector.js';
 import { parsePRD } from '../utils/prd-parser.js';
 import { generateWorkflow } from '../utils/task-generator.js';
 import type { Workflow } from '../utils/types.js';
+import { validateWorktree } from '../utils/worktree-validator.js';
 
 export const ralphFromPrdSchema = {
   name: 'ralph_from_prd',
@@ -32,6 +33,9 @@ export async function ralphFromPrd(args: {
     // Parse PRD
     const prd = parsePRD(args.prd_content);
 
+    // Validate worktree setup
+    const worktreeValidation = validateWorktree(prd.title);
+
     // Detect technology stack
     const tech = detectTechnology(args.prd_content);
 
@@ -44,8 +48,14 @@ export async function ralphFromPrd(args: {
         ? JSON.stringify(workflow, null, 2)
         : formatWorkflowAsMarkdown(workflow);
 
+    const summaryParts = [`✅ Generated workflow for "${prd.title}" with ${workflow.phases.length} phases`];
+
+    if (!worktreeValidation.isWorktree) {
+      summaryParts.push('\n\n' + worktreeValidation.suggestion);
+    }
+
     return {
-      summary: `✅ Generated workflow for "${prd.title}" with ${workflow.phases.length} phases`,
+      summary: summaryParts.join(''),
       data: { workflow: output, metadata: workflow.metadata },
     };
   } catch (error) {
