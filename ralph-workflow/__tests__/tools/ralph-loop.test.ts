@@ -360,4 +360,151 @@ test.describe('ralphLoop', () => {
       expect(data.results[3].taskId).toBe('impl-2');
     });
   });
+
+  test.describe('real command execution', () => {
+    const echoWorkflow = (tasks: object[]) => ({
+      metadata: {
+        projectName: 'cmd-test',
+        generatedAt: new Date().toISOString(),
+        technologyStack: {
+          languages: [],
+          frameworks: [],
+          databases: [],
+          infrastructure: [],
+          tools: [],
+        },
+      },
+      phases: [{ name: 'p1', description: 'd', tasks }],
+    });
+
+    test('should execute commands and capture output', async () => {
+      const wf = echoWorkflow([
+        { id: 't1', phase: 'p1', description: 'say hello', commands: ['echo hello'] },
+      ]);
+      const wfPath = join(tempDir, 'echo-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      const result = await ralphLoop({ workflow_path: wfPath, working_dir: tempDir });
+
+      const data = result.data as any;
+      expect(data.completed).toBe(1);
+      expect(data.failed).toBe(0);
+      expect(data.results[0].status).toBe('completed');
+      expect(data.results[0].output).toContain('hello');
+    });
+
+    test('should mark task as failed when command exits non-zero', async () => {
+      const wf = echoWorkflow([
+        { id: 'fail-1', phase: 'p1', description: 'will fail', commands: ['false'] },
+      ]);
+      const wfPath = join(tempDir, 'fail-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      const result = await ralphLoop({ workflow_path: wfPath, working_dir: tempDir });
+
+      const data = result.data as any;
+      expect(data.failed).toBe(1);
+      expect(data.completed).toBe(0);
+      expect(data.results[0].status).toBe('failed');
+    });
+
+    test('should stop after first failure when continue_on_failure is false', async () => {
+      const wf = echoWorkflow([
+        { id: 'a', phase: 'p1', description: 'fail', commands: ['false'] },
+        { id: 'b', phase: 'p1', description: 'should not run', commands: ['echo ok'] },
+      ]);
+      const wfPath = join(tempDir, 'stop-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      const result = await ralphLoop({
+        workflow_path: wfPath,
+        working_dir: tempDir,
+        continue_on_failure: false,
+      });
+
+      const data = result.data as any;
+      expect(data.results.length).toBe(1);
+      expect(data.results[0].taskId).toBe('a');
+      expect(data.results[0].status).toBe('failed');
+    });
+
+    test('should continue after failure when continue_on_failure is true', async () => {
+      const wf = echoWorkflow([
+        { id: 'a', phase: 'p1', description: 'fail', commands: ['false'] },
+        { id: 'b', phase: 'p1', description: 'still runs', commands: ['echo ok'] },
+      ]);
+      const wfPath = join(tempDir, 'continue-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      const result = await ralphLoop({
+        workflow_path: wfPath,
+        working_dir: tempDir,
+        continue_on_failure: true,
+      });
+
+      const data = result.data as any;
+      expect(data.results.length).toBe(2);
+      expect(data.results[0].status).toBe('failed');
+      expect(data.results[1].status).toBe('completed');
+    });
+
+    test('should not execute commands in dry_run mode and mark tasks completed', async () => {
+      const wf = echoWorkflow([
+        { id: 't1', phase: 'p1', description: 'dry task', commands: ['false'] },
+      ]);
+      const wfPath = join(tempDir, 'dry-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      const result = await ralphLoop({
+        workflow_path: wfPath,
+        working_dir: tempDir,
+        dry_run: true,
+      });
+
+      expect(result.summary).toContain('✅');
+      const data = result.data as any;
+      expect(data.completed).toBe(1);
+      expect(data.failed).toBe(0);
+      expect(data.results[0].output).toContain('[dry-run]');
+      expect(data.results[0].output).toContain('false');
+    });
+
+    test('should skip task when a dependency failed', async () => {
+      const wf = echoWorkflow([
+        { id: 'a', phase: 'p1', description: 'fails', commands: ['false'] },
+        { id: 'b', phase: 'p1', description: 'depends on a', commands: ['echo ok'], dependencies: ['a'] },
+      ]);
+      const wfPath = join(tempDir, 'dep-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      const result = await ralphLoop({
+        workflow_path: wfPath,
+        working_dir: tempDir,
+        continue_on_failure: true,
+      });
+
+      const data = result.data as any;
+      expect(data.results.length).toBe(2);
+      expect(data.results[0].status).toBe('failed');
+      expect(data.results[1].status).toBe('skipped');
+      expect(data.skipped).toBe(1);
+    });
+
+    test('should run commands in the specified working_dir', async () => {
+      const wf = echoWorkflow([
+        { id: 't1', phase: 'p1', description: 'print dir', commands: ['pwd'] },
+      ]);
+      const wfPath = join(tempDir, 'wd-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      const result = await ralphLoop({
+        workflow_path: wfPath,
+        working_dir: tempDir,
+      });
+
+      const data = result.data as any;
+      expect(data.results[0].status).toBe('completed');
+      expect(data.results[0].output).toContain(tempDir);
+    });
+  });
 });
