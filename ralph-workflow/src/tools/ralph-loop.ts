@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { execSync } from 'child_process';
 import { dirname } from 'path';
-import type { Workflow, WorkflowTask, TaskExecutionResult } from '../utils/types.js';
+import type { Workflow, WorkflowPhase, WorkflowTask, TaskExecutionResult } from '../utils/types.js';
 import { validateWorktree } from '../utils/worktree-validator.js';
 
 export const ralphLoopSchema = {
@@ -38,6 +38,11 @@ export const ralphLoopSchema = {
         description: 'Log commands without executing them',
         default: false,
       },
+      commit_per_phase: {
+        type: 'boolean',
+        description: 'Commit after each phase completes (summary commit per wave)',
+        default: false,
+      },
     },
     required: ['workflow_path'],
   },
@@ -66,6 +71,31 @@ function autoCommit(task: WorkflowTask, workingDir: string): void {
   }
 }
 
+function phaseCommit(
+  phase: WorkflowPhase,
+  phaseResults: TaskExecutionResult[],
+  workingDir: string
+): void {
+  try {
+    const completedCount = phaseResults.filter((r) => r.status === 'completed').length;
+    if (completedCount === 0) return;
+
+    const status = execSync('git status --porcelain', {
+      cwd: workingDir,
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
+    if (!status.trim()) return;
+
+    execSync('git add -A', { cwd: workingDir, stdio: 'pipe' });
+
+    const msg = `feat: complete phase "${phase.name}" (${completedCount}/${phase.tasks.length} tasks)`;
+    execSync(`git commit -m ${JSON.stringify(msg)}`, { cwd: workingDir, stdio: 'pipe' });
+  } catch {
+    // best-effort, swallow errors silently
+  }
+}
+
 export async function ralphLoop(args: {
   workflow_path: string;
   max_iterations?: number;
@@ -73,6 +103,7 @@ export async function ralphLoop(args: {
   working_dir?: string;
   continue_on_failure?: boolean;
   dry_run?: boolean;
+  commit_per_phase?: boolean;
 }): Promise<{ summary: string; data?: unknown }> {
   try {
     const content = await readFile(args.workflow_path, 'utf-8');
@@ -94,6 +125,7 @@ export async function ralphLoop(args: {
 
     for (const phase of workflow.phases) {
       if (stopped) break;
+      const phaseStartIdx = results.length;
 
       for (const task of phase.tasks) {
         if (stopped || iteration >= maxIterations) break;
@@ -178,6 +210,11 @@ export async function ralphLoop(args: {
         if (!taskFailed && args.auto_commit && !dryRun) {
           autoCommit(task, workingDir);
         }
+      }
+
+      if (args.commit_per_phase && !dryRun) {
+        const phaseResults = results.slice(phaseStartIdx);
+        phaseCommit(phase, phaseResults, workingDir);
       }
     }
 

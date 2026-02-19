@@ -3,6 +3,7 @@ import { ralphLoop } from '../../src/tools/ralph-loop.js';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
+import { execSync } from 'child_process';
 
 test.describe('ralphLoop', () => {
   let tempDir: string;
@@ -505,6 +506,180 @@ test.describe('ralphLoop', () => {
       const data = result.data as any;
       expect(data.results[0].status).toBe('completed');
       expect(data.results[0].output).toContain(tempDir);
+    });
+  });
+
+  test.describe('commit_per_phase parameter', () => {
+    function initGitRepo(dir: string): void {
+      execSync('git init', { cwd: dir, stdio: 'pipe' });
+      execSync('git config user.email "test@example.com"', { cwd: dir, stdio: 'pipe' });
+      execSync('git config user.name "Test User"', { cwd: dir, stdio: 'pipe' });
+    }
+
+    function gitLog(dir: string): string {
+      return execSync('git log --oneline', { cwd: dir, encoding: 'utf-8', stdio: 'pipe' });
+    }
+
+    function makePhaseWorkflow(phases: { name: string; tasks: object[] }[]) {
+      return {
+        metadata: {
+          projectName: 'phase-commit-test',
+          generatedAt: new Date().toISOString(),
+          technologyStack: {
+            languages: [],
+            frameworks: [],
+            databases: [],
+            infrastructure: [],
+            tools: [],
+          },
+        },
+        phases: phases.map((p) => ({ name: p.name, description: p.name, tasks: p.tasks })),
+      };
+    }
+
+    test('should create a phase commit after a completed phase', async () => {
+      initGitRepo(tempDir);
+
+      const wf = makePhaseWorkflow([
+        {
+          name: 'Build',
+          tasks: [
+            { id: 't1', phase: 'build', description: 'touch file', commands: [`touch ${join(tempDir, 'out.txt')}`] },
+          ],
+        },
+      ]);
+      const wfPath = join(tempDir, 'phase-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      await ralphLoop({ workflow_path: wfPath, working_dir: tempDir, commit_per_phase: true });
+
+      const log = gitLog(tempDir);
+      expect(log).toContain('Build');
+    });
+
+    test('should use the correct commit message format', async () => {
+      initGitRepo(tempDir);
+
+      const wf = makePhaseWorkflow([
+        {
+          name: 'Deploy',
+          tasks: [
+            { id: 't1', phase: 'deploy', description: 'write file', commands: [`touch ${join(tempDir, 'deploy.txt')}`] },
+          ],
+        },
+      ]);
+      const wfPath = join(tempDir, 'msg-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      await ralphLoop({ workflow_path: wfPath, working_dir: tempDir, commit_per_phase: true });
+
+      const log = gitLog(tempDir);
+      expect(log).toMatch(/feat: complete phase "Deploy" \(1\/1 tasks\)/);
+    });
+
+    test('should not commit when no tasks in the phase completed', async () => {
+      initGitRepo(tempDir);
+
+      const wf = makePhaseWorkflow([
+        {
+          name: 'WillFail',
+          tasks: [
+            { id: 'f1', phase: 'fail', description: 'fail task', commands: ['false'] },
+          ],
+        },
+      ]);
+      const wfPath = join(tempDir, 'nofail-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      await ralphLoop({ workflow_path: wfPath, working_dir: tempDir, commit_per_phase: true });
+
+      let hasCommits = true;
+      try {
+        gitLog(tempDir);
+      } catch {
+        hasCommits = false;
+      }
+      expect(hasCommits).toBe(false);
+    });
+
+    test('should not commit when dry_run is true', async () => {
+      initGitRepo(tempDir);
+
+      const wf = makePhaseWorkflow([
+        {
+          name: 'DryPhase',
+          tasks: [
+            { id: 't1', phase: 'dry', description: 'dry task', commands: ['false'] },
+          ],
+        },
+      ]);
+      const wfPath = join(tempDir, 'dryrun-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      await ralphLoop({ workflow_path: wfPath, working_dir: tempDir, commit_per_phase: true, dry_run: true });
+
+      let hasCommits = true;
+      try {
+        gitLog(tempDir);
+      } catch {
+        hasCommits = false;
+      }
+      expect(hasCommits).toBe(false);
+    });
+
+    test('should create one commit per phase for multiple phases', async () => {
+      initGitRepo(tempDir);
+
+      const wf = makePhaseWorkflow([
+        {
+          name: 'PhaseOne',
+          tasks: [
+            { id: 'p1t1', phase: 'one', description: 'create file 1', commands: [`touch ${join(tempDir, 'file1.txt')}`] },
+          ],
+        },
+        {
+          name: 'PhaseTwo',
+          tasks: [
+            { id: 'p2t1', phase: 'two', description: 'create file 2', commands: [`touch ${join(tempDir, 'file2.txt')}`] },
+          ],
+        },
+      ]);
+      const wfPath = join(tempDir, 'multi-phase-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      await ralphLoop({ workflow_path: wfPath, working_dir: tempDir, commit_per_phase: true });
+
+      const log = gitLog(tempDir);
+      const lines = log.trim().split('\n').filter(Boolean);
+      expect(lines.length).toBe(2);
+      expect(log).toContain('PhaseOne');
+      expect(log).toContain('PhaseTwo');
+    });
+
+    test('should not create phase commits when commit_per_phase is not set', async () => {
+      initGitRepo(tempDir);
+
+      const wf = makePhaseWorkflow([
+        {
+          name: 'SilentPhase',
+          tasks: [
+            { id: 't1', phase: 'silent', description: 'touch file', commands: [`touch ${join(tempDir, 'silent.txt')}`] },
+          ],
+        },
+      ]);
+      const wfPath = join(tempDir, 'nocommit-wf.json');
+      await writeFile(wfPath, JSON.stringify(wf));
+
+      // commit_per_phase not passed — defaults to false
+      await ralphLoop({ workflow_path: wfPath, working_dir: tempDir });
+
+      let hasCommits = true;
+      try {
+        gitLog(tempDir);
+      } catch {
+        hasCommits = false;
+      }
+      expect(hasCommits).toBe(false);
     });
   });
 });
