@@ -1,0 +1,74 @@
+software-development-pipeline:
+  description: "Full-cycle pipeline: Worktree → PRD → Architecture → TDD → Implementation → Validation → Security → Release. Supports TypeScript/JavaScript and .NET/C#."
+  steps:
+    - agent: worktree-agent
+      prompt: "Create an isolated git worktree for this feature. Derive the branch name from the task description.\n\nTask: $ORIGINAL"
+
+    - agent: prd-agent
+      prompt: "Create a structured PRD for the following task. Work inside the worktree path provided. Detect the project language from the working directory.\n\nWorktree context: $INPUT\n\nTask: $ORIGINAL"
+
+    - agent: architect-agent
+      prompt: "Create a technical design document based on the following PRD. Work inside the worktree path from the setup context. Scan the existing codebase for patterns before designing.\n\nPRD + worktree context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+    - agent: tdd-agent
+      prompt: "Write failing tests based on the PRD and technical design below. Work inside the worktree path. Map every acceptance criterion to at least one test case. Confirm tests are discoverable before finishing.\n\nPRD + Design + worktree context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+    - agent: implementation-agent
+      prompt: "Implement code so all tests pass. Work inside the worktree path. Run the self-check suite (type check, issue detection, tests) before finishing. Do not hand off with failing self-checks.\n\nTest suite + design + worktree context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+    - agent: validation-agent
+      prompt: "Perform a thorough code review of the implementation using all available analysis tools. Work inside the worktree path. Produce a structured PASS/FAIL report with required fixes and recommendations.\n\nImplementation + worktree context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+    - agent: security-agent
+      prompt: "Perform a dedicated security review of the implementation. Work inside the worktree path. Run code_security_scan and manual pattern checks. Produce a severity-classified findings report.\n\nContext: $INPUT\n\nOriginal task: $ORIGINAL"
+
+    - agent: release-agent
+      prompt: "Prepare the implementation for release from the worktree branch: bump version, update changelog, create a pull request with structured description. The worktree path and branch are in the context below.\n\nContext: $INPUT\n\nOriginal task: $ORIGINAL"
+
+tdd-implementation-loop:
+  description: "Focused TDD loop: Worktree → write tests → implement → validate. No PRD or release steps."
+  steps:
+    - agent: worktree-agent
+      prompt: "Create an isolated git worktree for this feature. Derive the branch name from the task description.\n\nTask: $ORIGINAL"
+
+    - agent: tdd-agent
+      prompt: "Write failing tests for the following feature. Work inside the worktree path provided.\n\nWorktree context: $INPUT\n\nFeature: $ORIGINAL"
+
+    - agent: implementation-agent
+      prompt: "Implement code so all tests pass. Work inside the worktree path. Run self-checks before finishing.\n\nTest + worktree context: $INPUT\n\nFeature: $ORIGINAL"
+
+    - agent: validation-agent
+      prompt: "Review the implementation inside the worktree. Check test coverage and code quality. Report PASS or FAIL with findings.\n\nContext: $INPUT\n\nFeature: $ORIGINAL"
+
+prd-ralph-pipeline:
+  description: "Automated PRD → RALPH implementation → local code review → release. Lighter-weight alternative to the full TDD pipeline: uses ralph_from_prd + ralph_loop for implementation, then gates on code-reviewer-agent before release."
+  steps:
+    - agent: worktree-agent
+      prompt: "Create an isolated git worktree for this feature. Derive the branch name from the task description.\n\nTask: $ORIGINAL"
+
+    - agent: prd-agent
+      prompt: "Create a structured PRD for the following task. Work inside the worktree path provided. Detect the project language from the working directory.\n\nWorktree context: $INPUT\n\nTask: $ORIGINAL"
+
+    - agent: ralph-agent
+      prompt: "Generate and execute an implementation workflow from the PRD below using ralph_from_prd then ralph_loop. Work inside the worktree path. Use commit_per_phase: true. Report completed phases, failed tasks, and all artifacts created.\n\nPRD + worktree context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+    - agent: code-reviewer-agent
+      prompt: "Run a full local pre-CI review of the implementation in the worktree. Check type errors, tests, coverage (≥80%), security (0 critical/high), complexity (≤15), and detected issues. Produce a structured PASS/FAIL report. On FAIL, list all required fixes.\n\nImplementation context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+    - agent: release-agent
+      prompt: "Prepare the implementation for release from the worktree branch. Bump version, update changelog, create a pull request with structured description. Only proceed if the code review verdict is PASS — if the review shows FAIL, halt and return the findings.\n\nCode review + context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+code-review-pipeline:
+  description: "Validation + security review only. Use on existing code without full pipeline."
+  steps:
+    - agent: validation-agent
+      prompt: "Perform a thorough code review of the code at the path or described below. Use all available analysis tools.\n\nCode context: $ORIGINAL"
+
+    - agent: security-agent
+      prompt: "Perform a security review based on the validation findings below and the original code.\n\nValidation report: $INPUT\n\nOriginal context: $ORIGINAL"
+
+pre-ci-check:
+  description: "Standalone local pre-CI check. Run on any working directory to catch issues before pushing. Uses code-reviewer-agent with all code-tools checks."
+  steps:
+    - agent: code-reviewer-agent
+      prompt: "Run a full local pre-CI review of the code at the path or working directory described below. Check: type errors, tests, coverage, security, complexity, and detected issues. Produce a structured PASS/FAIL report with actionable findings.\n\nContext: $ORIGINAL"

@@ -1,0 +1,29 @@
+software-development-team:
+  - worktree-agent
+  - orchestrator-agent
+  - prd-agent
+  - architect-agent
+  - tdd-agent
+  - implementation-agent
+  - validation-agent
+  - security-agent
+  - code-reviewer-agent
+  - release-agent
+
+tdd-team:
+  - worktree-agent
+  - tdd-agent
+  - implementation-agent
+  - validation-agent
+
+review-team:
+  - validation-agent
+  - security-agent
+  - code-reviewer-agent
+
+prd-ralph-team:
+  - worktree-agent
+  - prd-agent
+  - ralph-agent
+  - code-reviewer-agent
+  - release-agent
