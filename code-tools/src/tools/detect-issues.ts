@@ -1,14 +1,14 @@
 /**
- * Detect code issues tool
+ * Detect code issues tool — supports TypeScript/JavaScript and .NET/C#
  */
 
-import { readFileContent } from '../utils/parser.js';
-import { detectIssues } from '../utils/analyzer.js';
+import { readFileContent, isDotNet } from '../utils/parser.js';
+import { detectIssues, detectDotNetIssues } from '../utils/analyzer.js';
 import type { ToolResponse, CodeIssue } from '../utils/types.js';
 
 export const detectIssuesSchema = {
   name: 'code_detect_issues',
-  description: 'Detect common code issues and anti-patterns',
+  description: 'Detect common code issues and anti-patterns. Supports TypeScript/JavaScript and .NET/C#.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -35,8 +35,10 @@ export async function detectIssuesToolFunc(args: {
     const severity = args.severity ?? 'all';
     const content = await readFileContent(args.file_path);
 
-    // Detect all issues
-    let issues = detectIssues(args.file_path, content);
+    // Detect all issues — route to language-appropriate detector
+    let issues = isDotNet(args.file_path)
+      ? detectDotNetIssues(args.file_path, content)
+      : detectIssues(args.file_path, content);
 
     // Filter by severity if needed
     if (severity !== 'all') {

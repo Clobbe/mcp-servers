@@ -194,3 +194,78 @@ export async function readFileContent(filePath: string): Promise<string> {
 export function isTypeScriptOrJavaScript(filePath: string): boolean {
   return /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(filePath);
 }
+
+/**
+ * Check if file is a .NET / C# source file
+ */
+export function isDotNet(filePath: string): boolean {
+  return /\.(cs|csx|vb|fs|fsx|fsi)$/.test(filePath);
+}
+
+/**
+ * Check if file is any supported source file (JS/TS or .NET)
+ */
+export function isSupportedSourceFile(filePath: string): boolean {
+  return isTypeScriptOrJavaScript(filePath) || isDotNet(filePath);
+}
+
+/**
+ * Detect project language from directory contents
+ */
+export async function detectLanguage(
+  directory: string
+): Promise<'typescript' | 'csharp' | 'mixed' | 'unknown'> {
+  let hasTs = false;
+  let hasCs = false;
+
+  try {
+    // Non-recursive scan of top-level files — package.json / .csproj / .sln always sit at root
+    const entries = await fs.readdir(directory);
+    for (const entry of entries) {
+      if (/\.(ts|tsx|js|jsx|mjs|cjs)$/.test(entry) || entry === 'package.json') hasTs = true;
+      if (/\.(cs|csx|vb|fs|fsx|fsi|csproj|sln)$/.test(entry)) hasCs = true;
+      if (hasTs && hasCs) break;
+    }
+  } catch {
+    // ignore read errors
+  }
+
+  if (hasTs && hasCs) return 'mixed';
+  if (hasTs) return 'typescript';
+  if (hasCs) return 'csharp';
+  return 'unknown';
+}
+
+/**
+ * Extract C# / VB / F# methods using regex (no Roslyn available in Node.js).
+ * Returns method names and line numbers.
+ */
+export function extractDotNetMethods(
+  content: string
+): Array<{ name: string; line: number; isAsync: boolean; isPublic: boolean }> {
+  const methods: Array<{ name: string; line: number; isAsync: boolean; isPublic: boolean }> = [];
+  const lines = content.split('\n');
+
+  // Matches: [access] [static] [async] <returnType> <MethodName>(
+  // Also matches constructors and expression-bodied members
+  const methodPattern =
+    /^\s*(?:(?:public|private|protected|internal|static|virtual|override|abstract|sealed|extern)\s+)*(?:async\s+)?(?:[\w<>\[\]?,\s]+?)\s+(\w+)\s*(?:<[^>]*>)?\s*\(/;
+
+  // Skip keywords that match the pattern but are not method names
+  const skipKeywords = new Set([
+    'if', 'while', 'for', 'foreach', 'switch', 'using', 'catch', 'lock',
+    'fixed', 'checked', 'unchecked', 'return', 'new', 'class', 'struct',
+    'interface', 'enum', 'namespace', 'record',
+  ]);
+
+  lines.forEach((line, index) => {
+    const match = line.match(methodPattern);
+    if (match && match[1] && !skipKeywords.has(match[1])) {
+      const isAsync = /\basync\b/.test(line);
+      const isPublic = /\bpublic\b/.test(line);
+      methods.push({ name: match[1], line: index + 1, isAsync, isPublic });
+    }
+  });
+
+  return methods;
+}

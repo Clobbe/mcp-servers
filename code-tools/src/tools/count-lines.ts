@@ -4,13 +4,13 @@
 
 import fs from 'fs/promises';
 import path from 'path';
-import { readFileContent, isTypeScriptOrJavaScript } from '../utils/parser.js';
+import { readFileContent, isTypeScriptOrJavaScript, isDotNet } from '../utils/parser.js';
 import { countLines } from '../utils/analyzer.js';
 import type { ToolResponse, FileLineCount } from '../utils/types.js';
 
 export const countLinesSchema = {
   name: 'code_count_lines',
-  description: 'Count lines of code (excluding comments and blank lines)',
+  description: 'Count lines of code (excluding comments and blank lines). Supports TypeScript/JavaScript and .NET/C#.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -98,7 +98,7 @@ async function countDirectory(dirPath: string, includeTests: boolean): Promise<T
         continue;
       }
 
-      if (entry.isFile() && isTypeScriptOrJavaScript(entry.name)) {
+      if (entry.isFile() && (isTypeScriptOrJavaScript(entry.name) || isDotNet(entry.name))) {
         try {
           const content = await readFileContent(fullPath);
           const result = countLines(content);
@@ -138,5 +138,10 @@ async function countDirectory(dirPath: string, includeTests: boolean): Promise<T
  * Check if file is a test file
  */
 function isTestFile(filename: string): boolean {
-  return /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename) || filename.includes('__tests__');
+  return (
+    /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(filename) ||
+    filename.includes('__tests__') ||
+    /Tests?\.cs$/.test(filename) ||  // C# test files: MyServiceTests.cs
+    filename.endsWith('.Tests.cs')
+  );
 }

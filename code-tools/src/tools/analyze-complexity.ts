@@ -1,14 +1,15 @@
 /**
- * Analyze code complexity tool
+ * Analyze code complexity tool — supports TypeScript/JavaScript and .NET/C#
  */
 
-import { readFileContent } from '../utils/parser.js';
-import { analyzeFunctionComplexity } from '../utils/analyzer.js';
-import type { ToolResponse, ComplexityResult } from '../utils/types.js';
+import { readFileContent, isDotNet, extractDotNetMethods } from '../utils/parser.js';
+import { analyzeFunctionComplexity, calculateDotNetComplexity } from '../utils/analyzer.js';
+import type { ToolResponse, ComplexityResult, FunctionComplexity } from '../utils/types.js';
 
 export const analyzeComplexitySchema = {
   name: 'code_analyze_complexity',
-  description: 'Analyze cyclomatic complexity of code in a file',
+  description:
+    'Analyze cyclomatic complexity of code in a file. Supports TypeScript/JavaScript and .NET/C#.',
   inputSchema: {
     type: 'object',
     properties: {
@@ -33,7 +34,23 @@ export async function analyzeComplexity(args: {
   try {
     const threshold = args.threshold ?? 10;
     const content = await readFileContent(args.file_path);
-    const functions = analyzeFunctionComplexity(content, threshold);
+
+    let functions: FunctionComplexity[];
+
+    if (isDotNet(args.file_path)) {
+      // Use .NET-aware method extraction and complexity calculation
+      const methods = extractDotNetMethods(content);
+      const lines = content.split('\n');
+      functions = methods.map((m) => {
+        // Extract method body (naive brace-matching from method start line)
+        const methodLines = lines.slice(m.line - 1);
+        const methodBody = extractBlock(methodLines);
+        const complexity = calculateDotNetComplexity(methodBody);
+        return { name: m.name, line: m.line, complexity, exceeds: complexity > threshold };
+      });
+    } else {
+      functions = analyzeFunctionComplexity(content, threshold);
+    }
 
     // Calculate statistics
     const totalComplexity = functions.reduce((sum, f) => sum + f.complexity, 0);
@@ -64,4 +81,24 @@ export async function analyzeComplexity(args: {
       error: error instanceof Error ? error.message : String(error),
     };
   }
+}
+
+/**
+ * Extract a brace-delimited block starting from the first line that contains '{'
+ */
+function extractBlock(lines: string[]): string {
+  const block: string[] = [];
+  let braceCount = 0;
+  let started = false;
+
+  for (const line of lines) {
+    block.push(line);
+    for (const ch of line) {
+      if (ch === '{') { braceCount++; started = true; }
+      else if (ch === '}') { braceCount--; }
+    }
+    if (started && braceCount === 0) break;
+  }
+
+  return block.join('\n');
 }
