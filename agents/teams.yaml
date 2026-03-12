@@ -27,3 +27,11 @@ prd-ralph-team:
   - ralph-agent
   - code-reviewer-agent
   - release-agent
+
+gh-issue-team:
+  - github-issue-agent
+  - worktree-agent
+  - prd-agent
+  - ralph-agent
+  - code-reviewer-agent
+  - release-agent
