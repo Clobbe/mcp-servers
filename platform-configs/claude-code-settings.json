@@ -18,6 +18,14 @@
     "code-tools": {
       "command": "node",
       "args": ["/Users/clobbster/dev/tooling/mcp-servers/code-tools/build/index.js"]
+    },
+    "agent-chain": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/agent-chain/build/index.js"]
+    },
+    "agent-team": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/agent-team/build/index.js"]
     }
   }
 }

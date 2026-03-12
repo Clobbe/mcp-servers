@@ -1,0 +1,27 @@
+# Goose MCP server configuration
+# File location: ~/.config/goose/config.yaml
+#
+# Add the extensions below to your existing config.yaml under the `extensions:` key.
+# Update paths if your mcp-servers repo is in a different location.
+
+extensions:
+  agent-chain:
+    name: Agent Chain
+    display_name: Agent Chain
+    description: Sequential agent pipeline orchestration — define chains of specialist agents in agent-chain.yaml and run them step-by-step with $INPUT/$ORIGINAL prompt chaining
+    cmd: node
+    args:
+      - /Users/clobbster/dev/tooling/mcp-servers/agent-chain/build/index.js
+    enabled: true
+    type: stdio
+    timeout: 300
+  agent-team:
+    name: Agent Team
+    display_name: Agent Team
+    description: Dispatcher-based multi-agent team orchestration — define teams of specialist agents in teams.yaml and dispatch tasks to individual agents with optional session continuity
+    cmd: node
+    args:
+      - /Users/clobbster/dev/tooling/mcp-servers/agent-team/build/index.js
+    enabled: true
+    type: stdio
+    timeout: 300
