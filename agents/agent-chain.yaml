@@ -74,139 +74,96 @@ pre-ci-check:
       prompt: "Run a full local pre-CI review of the code at the path or working directory described below. Check: type errors, tests, coverage, security, complexity, and detected issues. Produce a structured PASS/FAIL report with actionable findings.\n\nContext: $ORIGINAL"
 
 gh-issue-pipeline:
-  description: "Issue-driven pipeline: fetch GH issue + label in-progress → worktree → PRD from issue body → RALPH implementation → local pre-CI review → PR. The task string should contain the issue number, e.g. '#42' or 'issue #42: title'."
+  description: "Issue-driven pipeline: pre-flight → fetch & classify → worktree → reproduce (bugs) → implement → security scan → quality gate → PR → post-PR comment & changelog. Pass the issue number, e.g. '#42' or 'issue #42: title'."
   steps:
     - agent: github-issue-agent
-      prompt: "Fetch the GitHub issue from the task below, update its label to 'in-progress', and emit structured issue context including the full issue body.\n\nTask: $ORIGINAL"
-
-    - agent: worktree-agent
-      prompt: "Create an isolated git worktree for this issue. Derive the branch name from the issue number and title in the context below (e.g. 'issue-42-short-title').\n\nIssue context: $INPUT\n\nOriginal task: $ORIGINAL"
-
-    - agent: prd-agent
-      prompt: "Create a structured PRD using the GitHub issue body as the source of requirements. The issue context and worktree path are below. Work inside the worktree path.\n\nIssue + worktree context: $INPUT\n\nOriginal task: $ORIGINAL"
-
-    - agent: ralph-agent
-      prompt: "Generate and execute an implementation workflow from the PRD below using ralph_from_prd then ralph_loop. Work inside the worktree path. Use commit_per_phase: true. Report completed phases, failed tasks, and all artifacts created.\n\nPRD + worktree context: $INPUT\n\nOriginal task: $ORIGINAL"
-
-    - agent: code-reviewer-agent
-      prompt: "Run a full local pre-CI review of the implementation in the worktree. Check type errors, tests, coverage (≥80%), security (0 critical/high), complexity (≤15), and detected issues. Produce a structured PASS/FAIL report. On FAIL, list all required fixes.\n\nImplementation context: $INPUT\n\nOriginal task: $ORIGINAL"
-
-    - agent: release-agent
-      prompt: "Prepare the implementation for release from the worktree branch. Bump version, update changelog, create a pull request referencing the original GitHub issue number. Only proceed if the code review verdict is PASS.\n\nCode review + context: $INPUT\n\nOriginal task: $ORIGINAL"
-
-anatolia-gh-issue-pipeline:
-  description: "Full issue-to-PR pipeline: pre-flight, fetch, reproduce, implement, security scan, quality gate, PR, issue comment, changelog"
-  steps:
-    - agent: infra-engineer
       prompt: |
         TASK: $ORIGINAL
 
-        Step 1 — Pre-flight check.
+        Step 1 — Pre-flight check + fetch issue.
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
-
-        Before touching any code, verify this work isn't already in progress.
+        Before touching any code, verify the work isn't already in progress.
 
         Run with Bash tool:
-        1. Extract the issue number from "$ORIGINAL" (e.g. "issue #131" → 131). Call it ISSUE_NUMBER.
-        2. gh issue view <ISSUE_NUMBER> --repo auag/anatolia --json state,title | jq '{state,title}'
-        3. gh pr list --repo auag/anatolia --search "closes #<ISSUE_NUMBER>" --json number,title,state,headRefName
-        4. git branch -a | grep -i "issue-<ISSUE_NUMBER>\|fix/<ISSUE_NUMBER>"
+        1. Extract the issue number from "$ORIGINAL" (e.g. "issue #42" → 42). Call it ISSUE_NUMBER.
+        2. Detect the current repo: git remote get-url origin
+        3. gh issue view <ISSUE_NUMBER> --json state,title | jq '{state,title}'
+        4. gh pr list --search "closes #<ISSUE_NUMBER>" --json number,title,state,headRefName
+        5. git branch -a | grep -i "issue-<ISSUE_NUMBER>\|fix/<ISSUE_NUMBER>"
+        6. If PREFLIGHT=GO: fetch full issue detail:
+           gh issue view <ISSUE_NUMBER> --json number,title,body,labels,assignees,state
+           gh issue view <ISSUE_NUMBER> --comments
+           gh issue edit <ISSUE_NUMBER> --add-label "in-progress" 2>/dev/null || true
 
         Report:
-        - Issue state (open / closed / not found)
-        - Any existing PRs that reference this issue (number, state, branch)
-        - Any local or remote branches already targeting this issue
-        - PREFLIGHT=GO if the issue is open and no active PR/branch exists
-        - PREFLIGHT=STOP with reason if the issue is closed, already has an open PR, or has an active branch
-        - Re-emit: ISSUE_NUMBER=<number>
+        - PREFLIGHT=GO if issue is open and no active PR/branch exists
+        - PREFLIGHT=STOP with reason if closed, has an open PR, or has an active branch
+        - Issue title, type (bug / feature / chore / infra — infer from labels + body), summary, recommended approach
+        - Re-emit: ISSUE_NUMBER=<number>, ISSUE_TYPE=<bug|feature|chore|infra>, ISSUE_TITLE=<title>, REPO=<owner/repo>
 
-        If PREFLIGHT=STOP, halt immediately — do NOT continue to the next step.
+        If PREFLIGHT=STOP, halt immediately.
 
-    - agent: infra-engineer
+    - agent: worktree-agent
       prompt: |
-        PRE-FLIGHT RESULT:
+        PREFLIGHT + ISSUE CONTEXT:
         $INPUT
 
         ORIGINAL TASK: $ORIGINAL
 
-        Step 2 — Fetch and analyze the GitHub issue.
+        Step 2 — Create an isolated git worktree.
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+        Extract ISSUE_NUMBER and ISSUE_TITLE from $INPUT.
+        Create a worktree with branch name: fix/issue-<ISSUE_NUMBER>-<short-title-slug>
 
-        Extract ISSUE_NUMBER from $INPUT, then run with Bash tool:
-        1. gh issue view <ISSUE_NUMBER> --repo auag/anatolia --json number,title,body,labels,assignees,state
-        2. gh issue view <ISSUE_NUMBER> --repo auag/anatolia --comments
+        Re-emit at the end (unchanged):
+        - ISSUE_NUMBER, ISSUE_TYPE, ISSUE_TITLE, REPO
+        - WORKTREE_PATH=<absolute path>
+        - BRANCH=<branch name>
 
-        Analyze and report:
-        - Issue title and number
-        - Type: bug / feature / chore / infra (infer from labels and body)
-        - Summary of what is being requested or reported
-        - Relevant labels and assignees
-        - Code paths, files, or services mentioned
-        - Recommended approach (2-4 bullet points)
-        - Re-emit: ISSUE_NUMBER=<number>, ISSUE_TYPE=<bug|feature|chore|infra>, ISSUE_TITLE=<title>
-        End with: ISSUE_SUMMARY_COMPLETE
-
-    - agent: infra-engineer
+    - agent: implementation-agent
       prompt: |
-        ISSUE ANALYSIS:
+        ISSUE + WORKTREE CONTEXT:
         $INPUT
 
         ORIGINAL TASK: $ORIGINAL
 
         Step 3 — Reproduction check (bugs only).
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
-
-        Extract ISSUE_TYPE from $INPUT.
+        Extract ISSUE_TYPE from $INPUT. Work inside WORKTREE_PATH.
 
         If ISSUE_TYPE=bug:
-          Based on the issue analysis, try to surface the failure before fixing it:
-          1. Run any existing test that covers the affected area:
-             dotnet test Anatolia.sln --filter "FullyQualifiedName~<relevant namespace>" --logger "console;verbosity=normal" 2>&1 | tail -30
-          2. If no targeted test exists, grep the logs or check the relevant code path:
-             grep -rn "<key error term from issue>" /Users/clobbster/dev/work/auag/code/anatolia/Src/
-          3. Confirm whether the issue is reproducible with current code.
-          Report: REPRODUCED=YES/NO/INCONCLUSIVE with evidence.
+          Try to surface the failure before fixing it:
+          1. Run any existing test that covers the affected area (use the project's test runner)
+          2. If no targeted test exists, grep the relevant code path for the key error term from the issue
+          3. Confirm: REPRODUCED=YES/NO/INCONCLUSIVE with evidence
 
         If ISSUE_TYPE=feature or chore or infra:
-          Skip reproduction. Report: REPRODUCED=N/A (not a bug).
+          Skip. Report: REPRODUCED=N/A (not a bug)
 
-        Re-emit: ISSUE_NUMBER=<number>, ISSUE_TYPE=<type>, ISSUE_TITLE=<title>
+        Re-emit: ISSUE_NUMBER, ISSUE_TYPE, ISSUE_TITLE, REPO, WORKTREE_PATH, BRANCH
 
-    - agent: infra-engineer
+    - agent: implementation-agent
       prompt: |
         REPRODUCTION RESULT:
         $INPUT
 
         ORIGINAL TASK: $ORIGINAL
 
-        Step 4 — Investigate the relevant code and implement the fix.
+        Step 4 — Implement the fix or feature.
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
-
-        Extract ISSUE_NUMBER, ISSUE_TYPE, ISSUE_TITLE from $INPUT.
-
-        Based on the issue analysis and reproduction result:
-        1. Use Read and Bash (grep/find) tools to locate relevant files
-        2. Understand the current implementation
-        3. Implement the necessary code or config changes using Edit tool
-        4. Verify each change with Read tool after editing
-        5. If infrastructure CLI changes are needed, run them with Bash tool
+        Work inside WORKTREE_PATH. Use Read and Bash (grep/find) to locate relevant files, then Edit to apply changes.
 
         Rules:
-        - Tabs not spaces; using directives alphabetically sorted inside namespace
-        - All auth via Managed Identity — never add connection strings or secrets
+        - Follow the project's existing code style (detect from surrounding code)
+        - Do NOT add connection strings, secrets, or credentials
         - Do NOT commit
 
         End your response with:
-        - ISSUE_NUMBER=<number>
-        - ISSUE_TITLE=<title>
-        - FILES_CHANGED=<comma-separated absolute paths of changed files>
-        - CHANGE_SUMMARY=<one sentence describing what was done>
+        - ISSUE_NUMBER, ISSUE_TITLE, REPO, WORKTREE_PATH, BRANCH
+        - FILES_CHANGED=<comma-separated absolute paths>
+        - CHANGE_SUMMARY=<one sentence>
 
-    - agent: security-auditor
+    - agent: security-agent
       prompt: |
         IMPLEMENTATION RESULT:
         $INPUT
@@ -215,92 +172,63 @@ anatolia-gh-issue-pipeline:
 
         Step 5 — Security scan.
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
-
-        Extract FILES_CHANGED, ISSUE_NUMBER, ISSUE_TITLE, CHANGE_SUMMARY from $INPUT.
+        Extract FILES_CHANGED from $INPUT. Work inside WORKTREE_PATH.
 
         Run with Bash tool against each file in FILES_CHANGED:
-        1. grep -n 'password\|Password\|secret\|Secret\|connectionString\|ConnectionString\|apiKey\|ApiKey\|token\|Token\|-----BEGIN' <file>
-        2. grep -n 'ClientSecretCredential\|new SqlConnection\|new NpgsqlConnection' <file>
-        3. grep -n 'Process\.Start\|cmd\.exe\|/bin/sh\|string\.Format.*SELECT\|string\.Concat.*WHERE' <file>
-        4. For any .csproj in FILES_CHANGED:
-           dotnet list <csproj> package --vulnerable 2>&1
+        1. grep -n 'password\|secret\|connectionString\|apiKey\|token\|-----BEGIN' <file> (case-insensitive)
+        2. grep -n 'Process\.Start\|eval\|exec\|string\.Format.*SELECT\|string\.Concat.*WHERE' <file>
+        3. For any package manifest in FILES_CHANGED, check for known-vulnerable dependency versions
 
         Report all findings with file path + line number + severity (CRITICAL/HIGH/MEDIUM).
         End with: SECURITY=PASS or SECURITY=FAIL
 
-        Re-emit at the end (unchanged):
-        - ISSUE_NUMBER=<number>
-        - ISSUE_TITLE=<title>
-        - FILES_CHANGED=<same list>
-        - CHANGE_SUMMARY=<same summary>
+        Re-emit (unchanged): ISSUE_NUMBER, ISSUE_TITLE, REPO, WORKTREE_PATH, BRANCH, FILES_CHANGED, CHANGE_SUMMARY
 
-    - agent: test-validator
+    - agent: validation-agent
       prompt: |
         SECURITY SCAN RESULT:
         $INPUT
 
         ORIGINAL TASK: $ORIGINAL
 
-        Step 6 — Quality gate: static analysis, Bicep validation, build & test.
+        Step 6 — Quality gate: lint, build & test.
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+        Extract FILES_CHANGED from $INPUT. Work inside WORKTREE_PATH.
+        If $INPUT contains SECURITY=FAIL, stop immediately — report VALIDATION=FAIL (blocked by security).
 
-        Extract FILES_CHANGED, ISSUE_NUMBER, ISSUE_TITLE, CHANGE_SUMMARY from $INPUT.
-        If $INPUT contains SECURITY=FAIL, stop immediately and report VALIDATION=FAIL (blocked by security).
+        Otherwise run with Bash tool (adapt commands to the project's language/toolchain):
+        1. Lint / static analysis on changed source files
+        2. Build the project
+        3. Run tests (only if build succeeded) — capture pass/fail counts and failing test names
+        4. TODO/FIXME check: grep -n 'TODO\|FIXME\|HACK' <each file in FILES_CHANGED>
 
-        Otherwise run with Bash tool:
-        1. Static analysis — check code style on changed .cs files:
-           dotnet format Anatolia.sln --verify-no-changes --include <cs files from FILES_CHANGED> 2>&1 | tail -20
-        2. Bicep validation — for any .bicep files in FILES_CHANGED:
-           az bicep build --file <bicep file> 2>&1
-           (skip if no .bicep files changed)
-        3. Build:
-           dotnet build Anatolia.sln --configuration Release --no-incremental 2>&1 | tail -20
-        4. Tests (only if build succeeded):
-           dotnet test Anatolia.sln --configuration Release --no-build --logger "console;verbosity=normal" 2>&1 | tail -40
-        5. TODO/FIXME check:
-           grep -n 'TODO\|FIXME\|HACK\|throw new NotImplementedException' <each file in FILES_CHANGED>
-
-        Report:
-        - Static analysis result
-        - Bicep validation result (or "N/A — no Bicep files changed")
-        - Build result
-        - Test result (pass / fail counts, failing test names)
-        - TODO/FIXME findings
+        Report: lint result, build result, test result, TODO/FIXME findings.
         End with: VALIDATION=PASS or VALIDATION=FAIL
 
-        Re-emit at the end (unchanged):
-        - ISSUE_NUMBER=<number>
-        - ISSUE_TITLE=<title>
-        - FILES_CHANGED=<same list>
-        - CHANGE_SUMMARY=<same summary>
+        Re-emit (unchanged): ISSUE_NUMBER, ISSUE_TITLE, REPO, WORKTREE_PATH, BRANCH, FILES_CHANGED, CHANGE_SUMMARY
 
-    - agent: infra-engineer
+    - agent: release-agent
       prompt: |
         QUALITY GATE RESULT:
         $INPUT
 
         ORIGINAL TASK: $ORIGINAL
 
-        Step 7 — Create a feature branch and open a Pull Request.
+        Step 7 — Commit, push and open a Pull Request.
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
-
-        Extract ISSUE_NUMBER, ISSUE_TITLE, FILES_CHANGED, CHANGE_SUMMARY, VALIDATION from $INPUT.
+        Extract ISSUE_NUMBER, ISSUE_TITLE, FILES_CHANGED, CHANGE_SUMMARY, VALIDATION, WORKTREE_PATH, BRANCH, REPO from $INPUT.
 
         If VALIDATION=FAIL, stop immediately — do NOT create a PR. Report the failure.
 
-        Otherwise run with Bash tool:
+        Otherwise run with Bash tool inside WORKTREE_PATH:
         1. git status
-        2. git checkout -b fix/issue-<ISSUE_NUMBER>
-        3. Stage only the files in FILES_CHANGED (never git add -A):
+        2. Stage only FILES_CHANGED (never git add -A):
            git add <each file individually>
-        4. git commit -m "fix: <ISSUE_TITLE shortened to ≤60 chars> (#<ISSUE_NUMBER>)"
+        3. git commit -m "<type>: <ISSUE_TITLE shortened to ≤60 chars> (#<ISSUE_NUMBER>)"
            (no emoji, no Co-Authored-By, no "Generated with" attribution)
-        5. git push -u origin fix/issue-<ISSUE_NUMBER>
-        6. gh pr create \
-             --title "fix: <ISSUE_TITLE shortened>" \
+        4. git push -u origin <BRANCH>
+        5. gh pr create \
+             --title "<type>: <ISSUE_TITLE shortened>" \
              --body "Closes #<ISSUE_NUMBER>
 
         ## Changes
@@ -308,13 +236,13 @@ anatolia-gh-issue-pipeline:
 
         ## Test plan
         - [ ] Verify the fix locally
-        - [ ] Check relevant logs in dev after deploy" \
+        - [ ] Review CI results" \
              --base main
 
-        Report: PR_URL=<url>, BRANCH=fix/issue-<ISSUE_NUMBER>, COMMIT=<hash>, STATUS=SUCCESS or FAILURE
-        Re-emit: ISSUE_NUMBER=<number>
+        Report: PR_URL=<url>, BRANCH, COMMIT=<hash>, STATUS=SUCCESS or FAILURE
+        Re-emit: ISSUE_NUMBER, REPO
 
-    - agent: infra-engineer
+    - agent: github-issue-agent
       prompt: |
         PR RESULT:
         $INPUT
@@ -323,26 +251,23 @@ anatolia-gh-issue-pipeline:
 
         Step 8 — Post-PR: issue comment and changelog entry.
 
-        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
-
-        Extract ISSUE_NUMBER, PR_URL, STATUS from $INPUT.
-        If STATUS=FAILURE, skip this step and report the upstream failure.
+        Extract ISSUE_NUMBER, PR_URL, STATUS, REPO from $INPUT.
+        If STATUS=FAILURE, skip and report the upstream failure.
 
         Run with Bash tool:
         1. Post a comment on the issue:
-           gh issue comment <ISSUE_NUMBER> --repo auag/anatolia \
+           gh issue comment <ISSUE_NUMBER> --repo <REPO> \
              --body "A fix has been submitted in <PR_URL>. This issue will be closed once the PR is merged."
 
-        2. Check if CHANGELOG.md exists and if it is symlinked to the approved repo:
-           ls -la /Users/clobbster/dev/work/auag/code/anatolia/CHANGELOG.md 2>/dev/null || echo "NO_CHANGELOG"
-           readlink -f /Users/clobbster/dev/work/auag/code/anatolia/CHANGELOG.md 2>/dev/null || echo "NOT_A_SYMLINK"
+        2. Check for CHANGELOG.md in the working directory:
+           ls -la CHANGELOG.md 2>/dev/null || echo "NO_CHANGELOG"
+           readlink -f CHANGELOG.md 2>/dev/null || echo "NOT_A_SYMLINK"
 
-        3. Only if CHANGELOG.md exists and resolves to git@github.com:Clobbe/claude-code.git:
-           Prepend a new entry under the latest [Unreleased] heading:
-           "- fix: <ISSUE_TITLE> (closes #<ISSUE_NUMBER>, <PR_URL>)"
-           Use Edit tool. Do NOT create a new CHANGELOG.md if one doesn't exist.
+        3. If CHANGELOG.md exists, prepend a new entry under [Unreleased]:
+           "- <type>: <ISSUE_TITLE> (closes #<ISSUE_NUMBER>, <PR_URL>)"
+           Use Edit tool. Do NOT create CHANGELOG.md if it doesn't exist.
 
-        Report: issue comment URL, changelog update status (updated / skipped / no changelog found), final STATUS=SUCCESS or FAILURE.
+        Report: issue comment URL, changelog update status (updated / skipped / not found), final STATUS=SUCCESS or FAILURE.
 
 fix-externals-api-port:
   description: "Fix ca-externals-api startup probe failure (targetPort 80 to 8080) in dev and prod, then harden deploy workflows"
