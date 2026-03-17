@@ -7,7 +7,7 @@ echo ""
 
 FAILED=0
 BASE_DIR=~/dev/tooling/mcp-servers
-SERVERS=("ralph-workflow" "changelog-manager" "code-tools")
+SERVERS=("prd-generator" "ralph-workflow" "changelog-manager" "code-tools" "context-manager")
 
 # Colors
 GREEN='\033[0;32m'

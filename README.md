@@ -4,11 +4,11 @@ Universal Model Context Protocol servers for AI coding platforms (Claude Code, O
 
 ## 🎯 Overview
 
-Production-grade MCP servers providing **19 specialized tools** across 4 operational servers for PRD generation, workflow automation, changelog management, and code analysis.
+Production-grade MCP servers providing **33 specialized tools** across 5 operational servers for PRD generation, workflow automation, changelog management, code analysis, and context management.
 
 ### Key Features
 
-- **19 Tools** across 4 specialized servers (prd-generator, ralph-workflow, changelog-manager, code-tools)
+- **33 Tools** across 5 specialized servers (prd-generator, ralph-workflow, changelog-manager, code-tools, context-manager)
 - **TypeScript/Node.js** - Production reliability with strict type safety
 - **Cross-platform** - Works with Claude Code, OpenCode, Gemini CLI
 - **Ollama Integration** - Performance-based local LLM model selection
@@ -75,11 +75,11 @@ Complete changelog management with Keep a Changelog format and semantic versioni
 **Location:** `changelog-manager/`  
 **Documentation:** [changelog-manager/README.md](changelog-manager/README.md)
 
-### 4. Code Tools Server (5 tools)
+### 4. Code Tools Server (10 tools)
 
-Code analysis and quality assessment tools for TypeScript/JavaScript projects.
+Code analysis and quality assessment tools for TypeScript/JavaScript and .NET/C# projects.
 
-**Tools:**
+**Analysis Tools (5):**
 
 - `code_analyze_complexity` - Analyze cyclomatic complexity
 - `code_find_duplicates` - Find duplicate code blocks
@@ -87,8 +87,42 @@ Code analysis and quality assessment tools for TypeScript/JavaScript projects.
 - `code_count_lines` - Count lines of code (excluding comments)
 - `code_detect_issues` - Detect common issues and anti-patterns
 
+**Pipeline Tools (5):**
+
+- `code_run_tests` - Run test suite (Jest/Vitest/Playwright/dotnet)
+- `code_check_coverage` - Check test coverage with thresholds
+- `code_security_scan` - Scan for security vulnerabilities
+- `code_type_check` - TypeScript/C# type checking
+- `code_diff_summary` - Git diff analysis
+
 **Location:** `code-tools/`  
 **Documentation:** [code-tools/README.md](code-tools/README.md)
+
+### 5. Context Manager Server (9 tools)
+
+Context bundle management for organizing code files in AI-assisted development.
+
+**Tools:**
+
+- `context_create_bundle` - Create new context bundle
+- `context_add_file` - Add file to bundle
+- `context_remove_file` - Remove file from bundle
+- `context_list_bundles` - List all bundles
+- `context_load_bundle` - Load bundle contents
+- `context_save_bundle` - Save bundle to disk
+- `context_merge_bundles` - Merge multiple bundles
+- `context_search_context` - Search within bundle
+- `context_get_stats` - Get bundle statistics
+
+**Features:**
+
+- Persistent storage in `~/.mcp-context-bundles/`
+- Automatic language detection for 30+ file types
+- Full-text search across bundle files
+- Bundle merging and export
+
+**Location:** `context-manager/`  
+**Documentation:** [context-manager/README.md](context-manager/README.md)
 
 ## 🚀 Quick Start
 
@@ -104,7 +138,7 @@ Code analysis and quality assessment tools for TypeScript/JavaScript projects.
 cd ~/dev/tooling/mcp-servers
 
 # Install and build all servers
-for server in prd-generator ralph-workflow changelog-manager code-tools; do
+for server in prd-generator ralph-workflow changelog-manager code-tools context-manager; do
   cd $server && npm install && npm run build && cd ..
 done
 ```
@@ -135,6 +169,10 @@ Edit `~/.claude/settings.json`:
     "code-tools": {
       "command": "node",
       "args": ["/Users/clobbster/dev/tooling/mcp-servers/code-tools/build/index.js"]
+    },
+    "context-manager": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/context-manager/build/index.js"]
     }
   }
 }
@@ -163,6 +201,10 @@ Edit `~/.opencode/settings.json`:
     "code-tools": {
       "command": "node",
       "args": ["/Users/clobbster/dev/tooling/mcp-servers/code-tools/build/index.js"]
+    },
+    "context-manager": {
+      "command": "node",
+      "args": ["/Users/clobbster/dev/tooling/mcp-servers/context-manager/build/index.js"]
     }
   },
   "llm": {
@@ -185,7 +227,7 @@ Restart your AI coding platform and run:
 "List all available MCP tools"
 ```
 
-You should see all 19 tools listed.
+You should see all 33 tools listed.
 
 ### First Tool Usage
 

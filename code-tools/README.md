@@ -4,7 +4,9 @@ A Model Context Protocol (MCP) server providing code analysis and quality tools 
 
 ## Features
 
-This server provides **5 powerful code analysis tools**:
+This server provides **10 powerful code analysis and quality tools**:
+
+## Analysis Tools (5)
 
 ### 1. `code_analyze_complexity` - Cyclomatic Complexity Analysis
 
@@ -116,6 +118,109 @@ Detect common code issues and anti-patterns in your codebase.
 - Issues grouped by rule
 - Total count of errors and warnings
 
+## Pipeline Tools (5)
+
+### 6. `code_run_tests` - Test Suite Execution
+
+Run your project's test suite and get structured pass/fail results. Auto-detects npm/pnpm/yarn with Jest, Vitest, Playwright, or dotnet test.
+
+**Usage:**
+
+```typescript
+{
+  "directory": "./",
+  "test_command": "npm test",  // Optional, auto-detected
+  "timeout_ms": 60000  // Optional, default: 60000
+}
+```
+
+**Returns:**
+
+- Test results (passed/failed/skipped)
+- Execution time
+- Test output summary
+
+### 7. `code_check_coverage` - Test Coverage Analysis
+
+Run tests with coverage reporting and validate against thresholds. Supports Jest/Vitest (TypeScript/JavaScript) and dotnet test with Coverlet (.NET).
+
+**Usage:**
+
+```typescript
+{
+  "directory": "./",
+  "threshold": 80  // Optional, minimum % coverage required, default: 80
+}
+```
+
+**Returns:**
+
+- Overall line coverage percentage
+- Per-file coverage breakdown
+- Pass/fail based on threshold
+
+### 8. `code_security_scan` - Security Vulnerability Scanner
+
+Scan source files for security vulnerabilities including hardcoded secrets, injection risks, insecure crypto, and more. Supports TypeScript/JavaScript and .NET/C#.
+
+**Usage:**
+
+```typescript
+{
+  "path": "src/",  // File or directory
+  "severity": "high"  // Optional: "all", "critical", "high", "medium", "low", "info", default: "all"
+}
+```
+
+**Detects:**
+
+- Hardcoded secrets (API keys, passwords, tokens)
+- SQL injection vulnerabilities
+- Command injection risks
+- Insecure cryptography
+- Unsafe deserialization
+- Path traversal vulnerabilities
+
+### 9. `code_type_check` - TypeScript/C# Type Checking
+
+Run type checking on a project: `tsc --noEmit` for TypeScript or `dotnet build` for .NET/C#. Returns structured errors and warnings.
+
+**Usage:**
+
+```typescript
+{
+  "directory": "./",
+  "config_path": "tsconfig.json"  // Optional, TypeScript only, auto-detected
+}
+```
+
+**Returns:**
+
+- Type errors with file paths and line numbers
+- Warnings
+- Success/failure status
+
+### 10. `code_diff_summary` - Git Diff Analysis
+
+Produce a structured summary of git changes between two refs. Shows files changed, insertions, deletions, and change type per file.
+
+**Usage:**
+
+```typescript
+{
+  "directory": "./",
+  "base": "HEAD~1",  // Optional, default: HEAD~1
+  "head": "HEAD"     // Optional, default: HEAD
+}
+```
+
+**Returns:**
+
+- Files changed
+- Lines added/deleted per file
+- Change types (added/modified/deleted)
+- Total diff statistics
+
 ## Installation
 
 ```bash
@@ -151,6 +256,8 @@ Add to `~/.gemini/config.json` (same format as above).
 
 ## Example Interactions
 
+### Analysis Tools
+
 ```
 "Use code_analyze_complexity to analyze src/index.ts with a threshold of 5"
 
@@ -161,6 +268,20 @@ Add to `~/.gemini/config.json` (same format as above).
 "Use code_detect_issues to find issues in src/utils/parser.ts"
 
 "Use code_find_duplicates to find duplicate code in src/ with minimum 8 lines"
+```
+
+### Pipeline Tools
+
+```
+"Use code_run_tests to run the test suite in the current directory"
+
+"Use code_check_coverage to check test coverage with 85% threshold"
+
+"Use code_security_scan to scan src/ for security vulnerabilities"
+
+"Use code_type_check to validate TypeScript types in the current project"
+
+"Use code_diff_summary to show what changed in the last commit"
 ```
 
 ## Development
@@ -200,8 +321,15 @@ This server uses a **hybrid approach** for optimal performance and accuracy:
 
 ### Supported File Types
 
+**Analysis Tools:**
+
 - TypeScript: `.ts`, `.tsx`
 - JavaScript: `.js`, `.jsx`, `.mjs`, `.cjs`
+
+**Pipeline Tools:**
+
+- TypeScript/JavaScript projects (npm/pnpm/yarn/bun)
+- .NET/C# projects (dotnet CLI)
 
 ### Performance
 
@@ -211,13 +339,16 @@ This server uses a **hybrid approach** for optimal performance and accuracy:
 
 ## Testing
 
-All tools have comprehensive test coverage (32 tests, 100% passing):
+Analysis tools (1-5) have comprehensive test coverage:
 
+- 32 tests for the 5 analysis tools
 - Happy path scenarios
 - Error handling
 - Edge cases
 - Parameter validation
 - Filtering and options
+
+Pipeline tools (6-10) are functionally tested and working, with unit test expansion planned.
 
 Run tests with:
 
@@ -236,11 +367,17 @@ code-tools/
 │   │   ├── find-duplicates.ts
 │   │   ├── list-functions.ts
 │   │   ├── count-lines.ts
-│   │   └── detect-issues.ts
+│   │   ├── detect-issues.ts
+│   │   ├── run-tests.ts      # NEW: Test execution
+│   │   ├── check-coverage.ts # NEW: Coverage analysis
+│   │   ├── security-scan.ts  # NEW: Security scanning
+│   │   ├── type-check.ts     # NEW: Type checking
+│   │   └── diff-summary.ts   # NEW: Git diff analysis
 │   └── utils/                # Shared utilities
 │       ├── types.ts          # Type definitions
 │       ├── parser.ts         # Code parsing (TS Compiler API)
-│       └── analyzer.ts       # Analysis algorithms
+│       ├── analyzer.ts       # Analysis algorithms
+│       └── dotnet.ts         # .NET/C# support
 └── __tests__/                # Comprehensive test suite
 ```
 
