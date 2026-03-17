@@ -93,3 +93,279 @@ gh-issue-pipeline:
 
     - agent: release-agent
       prompt: "Prepare the implementation for release from the worktree branch. Bump version, update changelog, create a pull request referencing the original GitHub issue number. Only proceed if the code review verdict is PASS.\n\nCode review + context: $INPUT\n\nOriginal task: $ORIGINAL"
+
+anatolia-gh-issue-pipeline:
+  description: "Full issue-to-PR pipeline: pre-flight, fetch, reproduce, implement, security scan, quality gate, PR, issue comment, changelog"
+  steps:
+    - agent: infra-engineer
+      prompt: |
+        TASK: $ORIGINAL
+
+        Step 1 — Pre-flight check.
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Before touching any code, verify this work isn't already in progress.
+
+        Run with Bash tool:
+        1. Extract the issue number from "$ORIGINAL" (e.g. "issue #131" → 131). Call it ISSUE_NUMBER.
+        2. gh issue view <ISSUE_NUMBER> --repo auag/anatolia --json state,title | jq '{state,title}'
+        3. gh pr list --repo auag/anatolia --search "closes #<ISSUE_NUMBER>" --json number,title,state,headRefName
+        4. git branch -a | grep -i "issue-<ISSUE_NUMBER>\|fix/<ISSUE_NUMBER>"
+
+        Report:
+        - Issue state (open / closed / not found)
+        - Any existing PRs that reference this issue (number, state, branch)
+        - Any local or remote branches already targeting this issue
+        - PREFLIGHT=GO if the issue is open and no active PR/branch exists
+        - PREFLIGHT=STOP with reason if the issue is closed, already has an open PR, or has an active branch
+        - Re-emit: ISSUE_NUMBER=<number>
+
+        If PREFLIGHT=STOP, halt immediately — do NOT continue to the next step.
+
+    - agent: infra-engineer
+      prompt: |
+        PRE-FLIGHT RESULT:
+        $INPUT
+
+        ORIGINAL TASK: $ORIGINAL
+
+        Step 2 — Fetch and analyze the GitHub issue.
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Extract ISSUE_NUMBER from $INPUT, then run with Bash tool:
+        1. gh issue view <ISSUE_NUMBER> --repo auag/anatolia --json number,title,body,labels,assignees,state
+        2. gh issue view <ISSUE_NUMBER> --repo auag/anatolia --comments
+
+        Analyze and report:
+        - Issue title and number
+        - Type: bug / feature / chore / infra (infer from labels and body)
+        - Summary of what is being requested or reported
+        - Relevant labels and assignees
+        - Code paths, files, or services mentioned
+        - Recommended approach (2-4 bullet points)
+        - Re-emit: ISSUE_NUMBER=<number>, ISSUE_TYPE=<bug|feature|chore|infra>, ISSUE_TITLE=<title>
+        End with: ISSUE_SUMMARY_COMPLETE
+
+    - agent: infra-engineer
+      prompt: |
+        ISSUE ANALYSIS:
+        $INPUT
+
+        ORIGINAL TASK: $ORIGINAL
+
+        Step 3 — Reproduction check (bugs only).
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Extract ISSUE_TYPE from $INPUT.
+
+        If ISSUE_TYPE=bug:
+          Based on the issue analysis, try to surface the failure before fixing it:
+          1. Run any existing test that covers the affected area:
+             dotnet test Anatolia.sln --filter "FullyQualifiedName~<relevant namespace>" --logger "console;verbosity=normal" 2>&1 | tail -30
+          2. If no targeted test exists, grep the logs or check the relevant code path:
+             grep -rn "<key error term from issue>" /Users/clobbster/dev/work/auag/code/anatolia/Src/
+          3. Confirm whether the issue is reproducible with current code.
+          Report: REPRODUCED=YES/NO/INCONCLUSIVE with evidence.
+
+        If ISSUE_TYPE=feature or chore or infra:
+          Skip reproduction. Report: REPRODUCED=N/A (not a bug).
+
+        Re-emit: ISSUE_NUMBER=<number>, ISSUE_TYPE=<type>, ISSUE_TITLE=<title>
+
+    - agent: infra-engineer
+      prompt: |
+        REPRODUCTION RESULT:
+        $INPUT
+
+        ORIGINAL TASK: $ORIGINAL
+
+        Step 4 — Investigate the relevant code and implement the fix.
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Extract ISSUE_NUMBER, ISSUE_TYPE, ISSUE_TITLE from $INPUT.
+
+        Based on the issue analysis and reproduction result:
+        1. Use Read and Bash (grep/find) tools to locate relevant files
+        2. Understand the current implementation
+        3. Implement the necessary code or config changes using Edit tool
+        4. Verify each change with Read tool after editing
+        5. If infrastructure CLI changes are needed, run them with Bash tool
+
+        Rules:
+        - Tabs not spaces; using directives alphabetically sorted inside namespace
+        - All auth via Managed Identity — never add connection strings or secrets
+        - Do NOT commit
+
+        End your response with:
+        - ISSUE_NUMBER=<number>
+        - ISSUE_TITLE=<title>
+        - FILES_CHANGED=<comma-separated absolute paths of changed files>
+        - CHANGE_SUMMARY=<one sentence describing what was done>
+
+    - agent: security-auditor
+      prompt: |
+        IMPLEMENTATION RESULT:
+        $INPUT
+
+        ORIGINAL TASK: $ORIGINAL
+
+        Step 5 — Security scan.
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Extract FILES_CHANGED, ISSUE_NUMBER, ISSUE_TITLE, CHANGE_SUMMARY from $INPUT.
+
+        Run with Bash tool against each file in FILES_CHANGED:
+        1. grep -n 'password\|Password\|secret\|Secret\|connectionString\|ConnectionString\|apiKey\|ApiKey\|token\|Token\|-----BEGIN' <file>
+        2. grep -n 'ClientSecretCredential\|new SqlConnection\|new NpgsqlConnection' <file>
+        3. grep -n 'Process\.Start\|cmd\.exe\|/bin/sh\|string\.Format.*SELECT\|string\.Concat.*WHERE' <file>
+        4. For any .csproj in FILES_CHANGED:
+           dotnet list <csproj> package --vulnerable 2>&1
+
+        Report all findings with file path + line number + severity (CRITICAL/HIGH/MEDIUM).
+        End with: SECURITY=PASS or SECURITY=FAIL
+
+        Re-emit at the end (unchanged):
+        - ISSUE_NUMBER=<number>
+        - ISSUE_TITLE=<title>
+        - FILES_CHANGED=<same list>
+        - CHANGE_SUMMARY=<same summary>
+
+    - agent: test-validator
+      prompt: |
+        SECURITY SCAN RESULT:
+        $INPUT
+
+        ORIGINAL TASK: $ORIGINAL
+
+        Step 6 — Quality gate: static analysis, Bicep validation, build & test.
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Extract FILES_CHANGED, ISSUE_NUMBER, ISSUE_TITLE, CHANGE_SUMMARY from $INPUT.
+        If $INPUT contains SECURITY=FAIL, stop immediately and report VALIDATION=FAIL (blocked by security).
+
+        Otherwise run with Bash tool:
+        1. Static analysis — check code style on changed .cs files:
+           dotnet format Anatolia.sln --verify-no-changes --include <cs files from FILES_CHANGED> 2>&1 | tail -20
+        2. Bicep validation — for any .bicep files in FILES_CHANGED:
+           az bicep build --file <bicep file> 2>&1
+           (skip if no .bicep files changed)
+        3. Build:
+           dotnet build Anatolia.sln --configuration Release --no-incremental 2>&1 | tail -20
+        4. Tests (only if build succeeded):
+           dotnet test Anatolia.sln --configuration Release --no-build --logger "console;verbosity=normal" 2>&1 | tail -40
+        5. TODO/FIXME check:
+           grep -n 'TODO\|FIXME\|HACK\|throw new NotImplementedException' <each file in FILES_CHANGED>
+
+        Report:
+        - Static analysis result
+        - Bicep validation result (or "N/A — no Bicep files changed")
+        - Build result
+        - Test result (pass / fail counts, failing test names)
+        - TODO/FIXME findings
+        End with: VALIDATION=PASS or VALIDATION=FAIL
+
+        Re-emit at the end (unchanged):
+        - ISSUE_NUMBER=<number>
+        - ISSUE_TITLE=<title>
+        - FILES_CHANGED=<same list>
+        - CHANGE_SUMMARY=<same summary>
+
+    - agent: infra-engineer
+      prompt: |
+        QUALITY GATE RESULT:
+        $INPUT
+
+        ORIGINAL TASK: $ORIGINAL
+
+        Step 7 — Create a feature branch and open a Pull Request.
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Extract ISSUE_NUMBER, ISSUE_TITLE, FILES_CHANGED, CHANGE_SUMMARY, VALIDATION from $INPUT.
+
+        If VALIDATION=FAIL, stop immediately — do NOT create a PR. Report the failure.
+
+        Otherwise run with Bash tool:
+        1. git status
+        2. git checkout -b fix/issue-<ISSUE_NUMBER>
+        3. Stage only the files in FILES_CHANGED (never git add -A):
+           git add <each file individually>
+        4. git commit -m "fix: <ISSUE_TITLE shortened to ≤60 chars> (#<ISSUE_NUMBER>)"
+           (no emoji, no Co-Authored-By, no "Generated with" attribution)
+        5. git push -u origin fix/issue-<ISSUE_NUMBER>
+        6. gh pr create \
+             --title "fix: <ISSUE_TITLE shortened>" \
+             --body "Closes #<ISSUE_NUMBER>
+
+        ## Changes
+        <bullet list from CHANGE_SUMMARY>
+
+        ## Test plan
+        - [ ] Verify the fix locally
+        - [ ] Check relevant logs in dev after deploy" \
+             --base main
+
+        Report: PR_URL=<url>, BRANCH=fix/issue-<ISSUE_NUMBER>, COMMIT=<hash>, STATUS=SUCCESS or FAILURE
+        Re-emit: ISSUE_NUMBER=<number>
+
+    - agent: infra-engineer
+      prompt: |
+        PR RESULT:
+        $INPUT
+
+        ORIGINAL TASK: $ORIGINAL
+
+        Step 8 — Post-PR: issue comment and changelog entry.
+
+        Working dir: /Users/clobbster/dev/work/auag/code/anatolia
+
+        Extract ISSUE_NUMBER, PR_URL, STATUS from $INPUT.
+        If STATUS=FAILURE, skip this step and report the upstream failure.
+
+        Run with Bash tool:
+        1. Post a comment on the issue:
+           gh issue comment <ISSUE_NUMBER> --repo auag/anatolia \
+             --body "A fix has been submitted in <PR_URL>. This issue will be closed once the PR is merged."
+
+        2. Check if CHANGELOG.md exists and if it is symlinked to the approved repo:
+           ls -la /Users/clobbster/dev/work/auag/code/anatolia/CHANGELOG.md 2>/dev/null || echo "NO_CHANGELOG"
+           readlink -f /Users/clobbster/dev/work/auag/code/anatolia/CHANGELOG.md 2>/dev/null || echo "NOT_A_SYMLINK"
+
+        3. Only if CHANGELOG.md exists and resolves to git@github.com:Clobbe/claude-code.git:
+           Prepend a new entry under the latest [Unreleased] heading:
+           "- fix: <ISSUE_TITLE> (closes #<ISSUE_NUMBER>, <PR_URL>)"
+           Use Edit tool. Do NOT create a new CHANGELOG.md if one doesn't exist.
+
+        Report: issue comment URL, changelog update status (updated / skipped / no changelog found), final STATUS=SUCCESS or FAILURE.
+
+fix-externals-api-port:
+  description: "Fix ca-externals-api startup probe failure (targetPort 80 to 8080) in dev and prod, then harden deploy workflows"
+  steps:
+    - agent: infra-engineer
+      prompt: "You are fixing a critical Azure outage. The ca-anatolia-externals-api-dev Container App in rg-anatolia-dev has ingress targetPort=80 but the app binds to port 8080 (confirmed in logs: 'Now listening on http://[::]:8080'). The startup probe checks port 80, fails 600+ times, and kills the container every 4 minutes. The active revision is ActivationFailed/Unhealthy at 100% traffic.\n\nTASK - fix dev:\n1. Run: az containerapp ingress update --name ca-anatolia-externals-api-dev --resource-group rg-anatolia-dev --target-port 8080\n2. Sleep 45 seconds\n3. Run: az containerapp revision list -n ca-anatolia-externals-api-dev -g rg-anatolia-dev --query \"[?properties.active].{revision:name, health:properties.healthState, traffic:properties.trafficWeight, running:properties.runningState}\" -o table\n4. Run: az containerapp show -n ca-anatolia-externals-api-dev -g rg-anatolia-dev --query \"properties.configuration.ingress.targetPort\" -o tsv\n\nUse the Bash tool. End with: STATUS=SUCCESS or FAILURE, new revision name, health state, confirmed targetPort."
+    - agent: infra-engineer
+      prompt: "DEV FIX RESULT:\n$INPUT\n\nORIGINAL TASK: $ORIGINAL\n\nDev is fixed. Apply the same targetPort fix to production.\n\nTASK - fix prod:\n1. Run: az containerapp ingress update --name ca-anatolia-externals-api-prod --resource-group rg-anatolia-prod --target-port 8080\n2. Sleep 45 seconds\n3. Run: az containerapp revision list -n ca-anatolia-externals-api-prod -g rg-anatolia-prod --query \"[?properties.active].{revision:name, health:properties.healthState, traffic:properties.trafficWeight, running:properties.runningState}\" -o table\n4. Run: az containerapp show -n ca-anatolia-externals-api-prod -g rg-anatolia-prod --query \"properties.configuration.ingress.targetPort\" -o tsv\n\nUse the Bash tool. End with: STATUS=SUCCESS or FAILURE, new revision name, health state, confirmed targetPort."
+    - agent: infra-engineer
+      prompt: "DEV AND PROD FIX RESULTS:\n$INPUT\n\nORIGINAL TASK: $ORIGINAL\n\nBoth environments are fixed. Now harden the deploy workflows so a future infra re-deploy cannot silently reset targetPort back to 80.\n\nTASK - add --target-port 8080 to az containerapp update in both workflows:\n\nFILE 1: /Users/clobbster/dev/work/auag/code/anatolia/.github/workflows/build-and-deploy-dev.yml\nFind the 'Deploy Externals API to dev' step. In the az containerapp update command, add a new line '--target-port 8080 \\' after the --image line (before --set-env-vars).\n\nFILE 2: /Users/clobbster/dev/work/auag/code/anatolia/.github/workflows/deploy-prod.yml\nFind the 'Deploy Externals API to prod' step. Apply the same --target-port 8080 addition.\n\nSteps: Read each file with Read tool, make edits with Edit tool, verify with: grep -B2 -A12 'containerapp update' <file>\nDo NOT commit. Report what changed in each file and show grep verification output."
+
+fix-skrapan-prod:
+  description: "Trigger first-ever ca-skrapan prod execution and verify it starts"
+  steps:
+    - agent: infra-engineer
+      prompt: "TASK: $ORIGINAL\n\nInspect the ca-skrapan Container App Job in both dev and prod.\n\nRun with Bash tool:\n1. az containerapp job show -n ca-anatolia-skrapan-dev -g rg-anatolia-dev --query \"{provisioningState:properties.provisioningState, triggerType:properties.configuration.triggerType, cronExpression:properties.configuration.scheduleTriggerConfig.cronExpression, replicaTimeout:properties.configuration.replicaTimeout, image:properties.template.containers[0].image, envVars:properties.template.containers[0].env}\" -o json\n2. az containerapp job show -n ca-anatolia-skrapan-prod -g rg-anatolia-prod --query \"{provisioningState:properties.provisioningState, triggerType:properties.configuration.triggerType, cronExpression:properties.configuration.scheduleTriggerConfig.cronExpression, replicaTimeout:properties.configuration.replicaTimeout, image:properties.template.containers[0].image, envVars:properties.template.containers[0].env}\" -o json\n3. az containerapp job execution list -n ca-anatolia-skrapan-dev -g rg-anatolia-dev --query \"[].{name:name, status:properties.status, started:properties.startTime, ended:properties.endTime}\" -o table\n4. az containerapp job execution list -n ca-anatolia-skrapan-prod -g rg-anatolia-prod --query \"[].{name:name, status:properties.status, started:properties.startTime, ended:properties.endTime}\" -o table\n5. grep -A15 'Deploy Skrapan to dev' /Users/clobbster/dev/work/auag/code/anatolia/.github/workflows/build-and-deploy-dev.yml\n\nReport: trigger types, last run dates, env vars on prod job vs what the workflow sets, any missing config."
+    - agent: infra-engineer
+      prompt: "INSPECTION RESULT:\n$INPUT\n\nORIGINAL TASK: $ORIGINAL\n\nca-skrapan-prod has never been executed (triggerType: Manual, zero executions). Trigger the first manual prod run.\n\nTASK:\n1. Run: az containerapp job start -n ca-anatolia-skrapan-prod -g rg-anatolia-prod\n2. Sleep 20 seconds\n3. Run: az containerapp job execution list -n ca-anatolia-skrapan-prod -g rg-anatolia-prod --query \"[].{name:name, status:properties.status, started:properties.startTime}\" -o table\n\nNOTE: The job has a 3600s timeout - do NOT wait for completion. SUCCESS = execution record exists with status Running or Succeeded.\n\nUse Bash tool. Report the execution name and current status."
+
+fix-dataprotection-keys:
+  description: "Resolve ASP.NET Core DataProtection unencrypted-key warning in Externals API"
+  steps:
+    - agent: infra-engineer
+      prompt: "TASK: $ORIGINAL\n\nThe Externals API logs this on every startup in both envs: 'No XML encryptor configured. Key may be persisted to storage in unencrypted form.'\n\nInspect the current DataProtection setup.\n\nRun with Bash tool:\n1. grep -rn 'DataProtection\\|PersistKeys\\|ProtectKeysWith\\|AddDataProtection' /Users/clobbster/dev/work/auag/code/anatolia/Src/Apis/Externals/\n2. cat /Users/clobbster/dev/work/auag/code/anatolia/Src/Apis/Externals/Program.cs\n3. cat /Users/clobbster/dev/work/auag/code/anatolia/Src/Apis/Externals/Externals.csproj\n4. grep -rn 'cookie\\|Cookie\\|session\\|Session\\|antiforgery\\|AntiForgery' /Users/clobbster/dev/work/auag/code/anatolia/Src/Apis/Externals/\n\nReport: Is DataProtection configured? Does the API use cookies/sessions/anti-forgery? What packages are referenced? Recommended fix."
+    - agent: infra-engineer
+      prompt: "INSPECTION RESULT:\n$INPUT\n\nORIGINAL TASK: $ORIGINAL\n\nImplement the DataProtection fix for the Externals API. Working dir: /Users/clobbster/dev/work/auag/code/anatolia\n\nDECISION: If API uses only JWT/API-key auth (no cookies/sessions), configure key persistence to Azure Blob Storage so keys survive container restarts. Package: Azure.Extensions.AspNetCore.DataProtection.Blobs. Config: builder.Services.AddDataProtection().PersistKeysToAzureBlobStorage(new Uri(blobContainerUri), new DefaultAzureCredential(), 'externals-api-dp-keys'); where blobContainerUri comes from the Azure__BlobStorage__AccountEndpoint env var + container name. If API uses cookies/sessions, also add .ProtectKeysWithAzureKeyVault(...).\n\nSteps:\n1. Read Program.cs with Read tool\n2. Read Externals.csproj with Read tool\n3. Apply correct config using Edit tool (tabs not spaces, using directives alphabetically sorted)\n4. If new NuGet package needed run: cd /Users/clobbster/dev/work/auag/code/anatolia && dotnet add Src/Apis/Externals/Externals.csproj package <PackageName>\n5. Verify edit with Read tool\n\nDo NOT commit. Report what changed and show the new code block."
